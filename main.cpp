@@ -1,6 +1,11 @@
 #include <iostream>
+#include "PacketsReader.hpp"
+
+using namespace TDHH;
+using namespace std;
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    PacketsReader p = PacketsReader(string("test.csv"));
+    p.getNextIPPacket();
     return 0;
 }
