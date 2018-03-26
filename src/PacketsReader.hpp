@@ -5,11 +5,12 @@
 #ifndef NEWTDHH_PKTS_READER_HPP
 #define NEWTDHH_PKTS_READER_HPP
 
-namespace TDHH {
-
+#include <fstream>
 #include <string>
-    #include <fstream>
-    #include "IPPacket.hpp"
+#include "IPPacket.hpp"
+#include "CSVIterator.hpp"
+
+namespace TDHH {
 
     using namespace TDHH;
     using namespace std;
@@ -18,12 +19,13 @@ namespace TDHH {
     private:
         string filename;
         ifstream infile;
+        CSVIterator it;
     public:
-        PacketsReader(string filename) : filename(filename), infile(filename) {}
+        PacketsReader(string filename) : filename(filename), infile(filename) {it = CSVIterator(infile);}
 
-        IPPacket getNextIPPacket();
+        IPPacket* getNextIPPacket();
 
-        TransportPacket getNextTransportPacket();
+        TransportPacket* getNextTransportPacket();
     };
 }
 

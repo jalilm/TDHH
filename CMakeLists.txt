@@ -3,4 +3,8 @@ project(newTDHH)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(newTDHH main.cpp PacketsReader.cpp PacketsReader.hpp IPPacket.cpp IPPacket.hpp CSVIterator.cpp CSVIterator.hpp)
+find_package(Boost 1.58.0 COMPONENTS system filesystem REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
+add_executable(newTDHH src/main.cpp src/PacketsReader.cpp src/PacketsReader.hpp src/IPPacket.cpp src/IPPacket.hpp src/CSVIterator.cpp src/CSVIterator.hpp src/Router.cpp src/Router.hpp)
+target_link_libraries(newTDHH ${Boost_LIBRARIES})
+

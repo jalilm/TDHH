@@ -5,16 +5,16 @@
 #ifndef NEWTDHH_CSVITERATOR_HPP
 #define NEWTDHH_CSVITERATOR_HPP
 
+#include <iterator>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+
 namespace TDHH {
 
     using namespace std;
-
-#include <iterator>
-    #include <iostream>
-    #include <fstream>
-    #include <sstream>
-    #include <vector>
-    #include <string>
 
     class CSVRow {
     public:
@@ -48,7 +48,7 @@ namespace TDHH {
         std::vector<std::string> m_data;
     };
 
-    std::istream &operator>>(std::istream &str, CSVRow &data) {
+    inline std::istream &operator>>(std::istream &str, CSVRow &data) {
         data.readNextRow(str);
         return str;
     }
