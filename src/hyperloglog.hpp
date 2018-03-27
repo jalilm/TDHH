@@ -63,7 +63,7 @@ public:
      * @exception std::invalid_argument the argument is out of range.
      */
     HyperLogLog(uint8_t b = 4) throw (std::invalid_argument) :
-            b_(b), m_(1 << b), M_(m_, 0) {
+            b_(b), m_(1 << b), M_(m_, 0), seed(HLL_HASH_SEED) {
 
         if (b < 4 || 30 < b) {
             throw std::invalid_argument("bit width must be in the range [4,30]");
@@ -93,9 +93,13 @@ public:
      * @param[in] str string to add
      * @param[in] len length of string
      */
+
+    void set_seed(uint32_t s) {
+        seed = s;
+    }
     void add(const char* str, uint32_t len) {
         uint32_t hash;
-        MurmurHash3_x86_32(str, len, HLL_HASH_SEED, (void*) &hash);
+        MurmurHash3_x86_32(str, len, seed, (void*) &hash);
         uint32_t index = hash >> (32 - b_);
         uint8_t rank = _GET_CLZ((hash << b_), 32 - b_);
         if (rank > M_[index]) {
@@ -216,6 +220,7 @@ public:
 protected:
     uint8_t b_; ///< register bit width
     uint32_t m_; ///< register size
+    uint32_t seed;
     double alphaMM_; ///< alpha * m^2
     std::vector<uint8_t> M_; ///< registers
 };
@@ -245,7 +250,7 @@ public:
      */
     void add(const char* str, uint32_t len) {
         uint32_t hash;
-        MurmurHash3_x86_32(str, len, HLL_HASH_SEED, (void*) &hash);
+        MurmurHash3_x86_32(str, len, seed, (void*) &hash);
         uint32_t index = hash >> (32 - b_);
         uint8_t rank = _GET_CLZ((hash << b_), 32 - b_);
         rank = rank == 0 ? register_limit_ : std::min(register_limit_, rank);

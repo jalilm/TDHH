@@ -10,8 +10,6 @@ using namespace TDHH;
 using namespace std;
 using namespace hll;
 
-
-
 template<typename URNG>
 double beta_sample(URNG& engine, double a, double b)
 {
@@ -19,6 +17,22 @@ double beta_sample(URNG& engine, double a, double b)
     double p = unif(engine);
     return boost::math::ibeta_inv(a, b, p);
     // Use Boost policies if it's not fast enough
+}
+
+void vol_est(double eps, double delta=1){
+    Router r("../files/pkts.csv");
+    double real_vol = 30265204.0;
+    for (int i=0; i < 10; i++) {
+        HyperLogLog hll = r.volumeEstimation(eps, delta);
+        double estimate = hll.estimate();
+        cout << estimate <<","<< real_vol<<","<< 1.0 - estimate/real_vol << endl;
+        r.reset();
+    }
+}
+
+void dist_sample(double eps, double delta) {
+    Router r("../files/pkts.csv");
+    QMax qmax = r.sample(eps, delta);
 }
 
 int main() {
@@ -30,19 +44,6 @@ int main() {
 //        sum += beta_sample(gen,1,1);
 //    }
 //    cout << sum/i << endl;
-//    PacketsReader pr1 = PacketsReader(string("../files/pkts.csv"));
-//    unsigned long i1 = 0;
-//    auto pkt1 = pr1.getNextTransportPacket();
-//    while (pkt1 != NULL) {
-//        delete pkt1;
-//        i1++;
-//        pkt1 = pr1.getNextTransportPacket();f
-//    }
-//    cout << i1 << endl;
-//    cout << pr1.bad_proto << endl;
-//    cout << pr1.no_ports << endl;
-    Router r("../files/pkts.csv");
-    HyperLogLog hll = r.volumeEstimation(1,1);
-    cout << hll.estimate() << endl;
+    vol_est(0.05);
     return 0;
 }

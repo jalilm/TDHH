@@ -21,7 +21,12 @@ namespace TDHH {
         ifstream infile;
         CSVIterator it;
     public:
-        PacketsReader(string filename) : filename(filename), infile(filename) {it = CSVIterator(infile);}
+        PacketsReader(string filename) : filename(filename) {
+            infile = ifstream(filename);
+            it = CSVIterator(infile);
+        }
+
+        void reset() {infile=ifstream(filename); it = CSVIterator(infile);}
 
         IPPacket* getNextIPPacket();
 

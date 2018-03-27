@@ -19,10 +19,12 @@ namespace TDHH {
             PacketsReader pr;
         public:
             Router(const char *filename) : filename(filename), pr(filename) {};
-            void reset() { pr = PacketsReader(filename);};
-            HyperLogLog volumeEstimation(double eps, double delta) {
-                int bits = 8;
+            void reset() { pr.reset();};
+            HyperLogLog volumeEstimation(double eps, double delta=0) {
+                std::random_device rd;
+                int bits = ceil(log2(pow(eps,-2)));
                 HyperLogLog hll(bits);
+                hll.set_seed(rd());
                 auto pkt = pr.getNextIPPacket();
                 while(pkt != NULL) {
                     auto pkt_string = pkt->getReprString();
@@ -32,6 +34,18 @@ namespace TDHH {
                 }
                 return hll;
             };
+            QMax sample(double eps, double delta) {
+                unsigned int chi = ceil(3.0/(eps*eps)*log2(2.0/delta));
+                QMax chiMax = QMax(chi);
+                auto pkt = pr.getNextIPPacket();
+                while(pkt != NULL) {
+                    auto pkt_string = pkt->getReprString();
+                    chiMax.add(pkt_string.c_str(), pkt_string.size());
+                    delete pkt;
+                    pkt = pr.getNextIPPacket();
+                }
+                return chiMax;
+            }
 
     };
 };
