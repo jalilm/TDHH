@@ -18,6 +18,7 @@ namespace TDHH {
         string dst_ip;
         int id;
     public:
+        IPPacket(){};
         IPPacket(string src_ip, string dst_ip, int id) : src_ip(src_ip), dst_ip(dst_ip), id(id) {}
         inline friend std::ostream &operator<<(std::ostream &Str, IPPacket const &v) {
             Str << string("IP_SRC:") << v.src_ip << ",IP_DST:" << v.dst_ip << ",ID:" << v.id;
@@ -26,6 +27,24 @@ namespace TDHH {
         string getReprString() {
             stringstream sstm;
             sstm << src_ip << "." << dst_ip << "." << id;
+            return sstm.str();
+        }
+    };
+
+    class WeightedIPPacket : IPPacket {
+    protected:
+        IPPacket ippacket;
+    public:
+        int weight;
+        WeightedIPPacket() {};
+        WeightedIPPacket(string src_ip, string dst_ip, int id, int length) : ippacket(src_ip, dst_ip, id), weight(length) {};
+        inline friend std::ostream &operator<<(std::ostream &Str, WeightedIPPacket const &v) {
+            Str << string("IP_SRC:") << v.src_ip << ",IP_DST:" << v.dst_ip << ",ID:" << v.id << ",WEIGHT:" << v.weight;
+            return Str;
+        }
+        string getReprString() {
+            stringstream sstm;
+            sstm << src_ip << "." << dst_ip << "." << id << "." << weight;
             return sstm.str();
         }
     };

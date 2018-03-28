@@ -30,6 +30,8 @@ namespace TDHH {
 
         IPPacket* getNextIPPacket();
 
+        WeightedIPPacket* getNextWeightedIPPacket();
+
         TransportPacket* getNextTransportPacket();
     };
 }

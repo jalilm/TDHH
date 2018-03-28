@@ -32,6 +32,14 @@ namespace TDHH {
         return new IPPacket(m.find(string("IP_SRC"))->second, m.find(string("IP_DST"))->second, stoi(m.find(string("id"))->second));
     }
 
+    WeightedIPPacket* PacketsReader::getNextWeightedIPPacket() {
+        if (it == CSVIterator()) {
+            return NULL;
+        }
+        map<string,string> m = getNextPacket(it++);
+        return new WeightedIPPacket(m.find(string("IP_SRC"))->second, m.find(string("IP_DST"))->second, stoi(m.find(string("id"))->second), stoi(m.find(string("length"))->second));
+    }
+
     TransportPacket* PacketsReader::getNextTransportPacket() {
         if (it == CSVIterator()) {
             return NULL;
