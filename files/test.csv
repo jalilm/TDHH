@@ -1,2 +1,3 @@
-id:33678,proto:TCP (6),length:1500,IP_SRC:153.193.138.230,IP_DST:219.10.171.96,PORT_SRC:443,PORT_DST:39578
-id:33679,proto:TCP (6),length:1500,IP_SRC:153.193.138.230,IP_DST:219.10.171.96,PORT_SRC:443,PORT_DST:39578
+version https://git-lfs.github.com/spec/v1
+oid sha256:5b12eea21ca59eb6d35bf8c46cf4507838e5c2d90c0d6d3fa9d83f04bbdfbe0b
+size 213
