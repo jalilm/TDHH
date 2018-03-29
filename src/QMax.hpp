@@ -51,7 +51,6 @@ namespace TDHH {
     private:
         unsigned int q;
         vector<QMaxItem> qMinHeap;
-        std::random_device rd;
         std::mt19937 *engine;
         double hash(string s) {
             static std::uniform_real_distribution<double> unif(0,1);
@@ -59,6 +58,7 @@ namespace TDHH {
         }
     public:
         QMax(unsigned int q) : q(q) {
+            std::random_device rd;
             engine = new std::mt19937(rd());
         };
         ~QMax(){
@@ -71,8 +71,6 @@ namespace TDHH {
                 push_heap(qMinHeap.begin(),qMinHeap.end(), reverseComp());
             } else {
                 QMaxItem min_item = qMinHeap.front();
-                //double min = a.hash;
-                //double x = hash(p.getReprString());
                 if (*a < min_item) {
                     pop_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
                     qMinHeap.pop_back();
@@ -81,6 +79,27 @@ namespace TDHH {
                 }
             }
             delete a;
+        };
+
+        bool add_weighted(double hash, IPPacket p) {
+            QMaxItem *a = new QMaxItem(hash, p);
+            bool added = false;
+            if (qMinHeap.size() < q) {
+                qMinHeap.push_back(*a);
+                push_heap(qMinHeap.begin(),qMinHeap.end(), reverseComp());
+                added = true;
+            } else {
+                QMaxItem min_item = qMinHeap.front();
+                if (*a < min_item) {
+                    pop_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
+                    qMinHeap.pop_back();
+                    qMinHeap.push_back(*a);
+                    push_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
+                    added = true;
+                }
+            }
+            delete a;
+            return added;
         };
 
         vector<QMaxItem> getSample() const {

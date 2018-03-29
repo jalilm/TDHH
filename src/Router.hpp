@@ -10,6 +10,7 @@
 #include "hyperloglog.hpp"
 #include "QMax.hpp"
 #include <map>
+#include <boost/functional/hash.hpp>
 #include <boost/math/special_functions/beta.hpp>
 
 namespace TDHH {
@@ -65,26 +66,27 @@ namespace TDHH {
                 // Use Boost policies if it's not fast enough
             }
 
-        //    std::random_device rd;
-//    std::mt19937 gen(rd());
-//    double sum = 0;
-//    int i = 0;
-//    for(;i<100000;i++) {
-//        sum += beta_sample(gen,1,1);
-//    }
-//    cout << sum/i << endl;
-        //vol_est(0.05);
-
+            int hashCode(string s)
+            {
+                boost::hash<std::string> string_hash;
+                return string_hash(s);
+            }
 
             QMax weighted_sample(double eps, double delta) {
                 unsigned int chi = ceil(3.0/(eps*eps)*log2(2.0/delta));
                 QMax chiMax = QMax(chi);
                 auto pkt = pr.getNextWeightedIPPacket();
                 while(pkt != NULL) {
+                    int w = pkt->weight;
+                    int hc = hashCode(pkt->getReprString());
+                    std::mt19937 prng(hc);
+                    double p = beta_sample(prng, 1, w);
                     int i = 0;
-                    while(i < pkt->weight || i < chi) {
+                    bool added = true;
+                    while ((i < w || i < chi) && added) {
+                        added = chiMax.add_weighted(p, *pkt);
                         i++;
-                        chiMax.add(*pkt);
+                        p *= beta_sample(prng, 1, w-i);
                     }
                     delete pkt;
                     pkt = pr.getNextWeightedIPPacket();

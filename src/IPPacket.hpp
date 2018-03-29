@@ -31,7 +31,7 @@ namespace TDHH {
         }
     };
 
-    class WeightedIPPacket : IPPacket {
+    class WeightedIPPacket : public IPPacket {
     protected:
         IPPacket ippacket;
     public:

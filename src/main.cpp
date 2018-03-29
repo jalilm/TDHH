@@ -51,6 +51,6 @@ void weighted_dist_sample(double eps, double delta) {
 }
 
 int main() {
-    dist_sample(0.5, 0.5);
+    weighted_dist_sample(0.5, 0.5);
     return 0;
 }
