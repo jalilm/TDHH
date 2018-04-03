@@ -26,13 +26,16 @@ namespace TDHH {
             it = CSVIterator(infile);
         }
 
-        void reset() {infile=ifstream(filename); it = CSVIterator(infile);}
+        void reset() {
+            infile = ifstream(filename);
+            it = CSVIterator(infile);
+        }
 
-        IPPacket* getNextIPPacket();
+        IPPacket *getNextIPPacket();
 
-        WeightedIPPacket* getNextWeightedIPPacket();
+        WeightedIPPacket *getNextWeightedIPPacket();
 
-        TransportPacket* getNextTransportPacket();
+        TransportPacket *getNextTransportPacket();
     };
 }
 

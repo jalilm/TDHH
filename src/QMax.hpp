@@ -17,7 +17,9 @@ namespace TDHH {
     public:
         double hash;
         IPPacket p;
-        QMaxItem() {};
+
+        QMaxItem() : hash(0.0) {};
+
         QMaxItem(double x, IPPacket p) : hash(x), p(p) {}
 
         bool operator<(const QMaxItem &rhs) const {
@@ -42,7 +44,7 @@ namespace TDHH {
     };
 
     struct reverseComp {
-        bool operator()(const QMaxItem& i1, const QMaxItem& i2) {
+        bool operator()(const QMaxItem &i1, const QMaxItem &i2) {
             return i1 < i2;
         }
     };
@@ -52,23 +54,27 @@ namespace TDHH {
         unsigned int q;
         vector<QMaxItem> qMinHeap;
         std::mt19937 *engine;
+
         double hash(string s) {
-            static std::uniform_real_distribution<double> unif(0,1);
+            static std::uniform_real_distribution<double> unif(0, 1);
             return unif(*engine);
         }
+
     public:
         QMax(unsigned int q) : q(q) {
             std::random_device rd;
             engine = new std::mt19937(rd());
         };
-        ~QMax(){
+
+        ~QMax() {
             delete engine;
         }
+
         void add(IPPacket p) {
-            QMaxItem *a = new QMaxItem(hash(p.getReprString()),p);
+            QMaxItem *a = new QMaxItem(hash(p.getReprString()), p);
             if (qMinHeap.size() < q) {
                 qMinHeap.push_back(*a);
-                push_heap(qMinHeap.begin(),qMinHeap.end(), reverseComp());
+                push_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
             } else {
                 QMaxItem min_item = qMinHeap.front();
                 if (*a < min_item) {
@@ -86,7 +92,7 @@ namespace TDHH {
             bool added = false;
             if (qMinHeap.size() < q) {
                 qMinHeap.push_back(*a);
-                push_heap(qMinHeap.begin(),qMinHeap.end(), reverseComp());
+                push_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
                 added = true;
             } else {
                 QMaxItem min_item = qMinHeap.front();
@@ -111,7 +117,7 @@ namespace TDHH {
             qMinHeap.insert(qMinHeap.end(), v2.begin(), v2.end());
             sort_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
             qMinHeap.resize(q);
-            make_heap (qMinHeap.begin(),qMinHeap.end(), reverseComp());
+            make_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
         }
     };
 }
