@@ -47,7 +47,13 @@ namespace TDHH {
             Str << string("IP_SRC:") << v.src_ip << ",IP_DST:" << v.dst_ip << ",ID:" << v.id << ",WEIGHT:" << v.weight;
             return Str;
         }
+        string getReprString() {
+            stringstream sstm;
+            sstm << src_ip << "." << dst_ip << "." << id << "." << weight;
+            return sstm.str();
+        }
     };
+
 
 
     class TransportPacket : IPPacket {

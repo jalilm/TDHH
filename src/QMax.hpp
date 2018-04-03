@@ -108,6 +108,27 @@ namespace TDHH {
             return added;
         };
 
+        bool add_weighted(double hash, IPPacket p) {
+            QMaxItem *a = new QMaxItem(hash, p);
+            bool added = false;
+            if (qMinHeap.size() < q) {
+                qMinHeap.push_back(*a);
+                push_heap(qMinHeap.begin(),qMinHeap.end(), reverseComp());
+                added = true;
+            } else {
+                QMaxItem min_item = qMinHeap.front();
+                if (*a < min_item) {
+                    pop_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
+                    qMinHeap.pop_back();
+                    qMinHeap.push_back(*a);
+                    push_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
+                    added = true;
+                }
+            }
+            delete a;
+            return added;
+        };
+
         vector<QMaxItem> getSample() const {
             return qMinHeap;
         }
