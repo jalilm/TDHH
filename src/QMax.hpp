@@ -2,8 +2,8 @@
 // Created by jalilm on 28/03/18.
 //
 
-#ifndef NEWTDHH_QMAX_HPP
-#define NEWTDHH_QMAX_HPP
+#ifndef TDHH_QMAX_HPP
+#define TDHH_QMAX_HPP
 
 #include <stdint.h>
 #include "IPPacket.hpp"
@@ -12,12 +12,10 @@
 
 namespace TDHH {
     using namespace std;
-
     class QMaxItem {
     public:
         double hash;
         IPPacket p;
-
         QMaxItem() : hash(0.0) {};
 
         QMaxItem(double x, IPPacket p) : hash(x), p(p) {}
@@ -43,14 +41,14 @@ namespace TDHH {
         }
     };
 
-    struct reverseComp {
-        bool operator()(const QMaxItem &i1, const QMaxItem &i2) {
-            return i1 < i2;
-        }
-    };
-
     class QMax {
     private:
+        struct reverseComp {
+            bool operator()(const QMaxItem &i1, const QMaxItem &i2) {
+                return i1 < i2;
+            }
+        };
+
         unsigned int q;
         vector<QMaxItem> qMinHeap;
         std::mt19937 *engine;
@@ -64,7 +62,7 @@ namespace TDHH {
         QMax(unsigned int q) : q(q) {
             std::random_device rd;
             engine = new std::mt19937(rd());
-        };
+        }
 
         ~QMax() {
             delete engine;
@@ -85,7 +83,7 @@ namespace TDHH {
                 }
             }
             delete a;
-        };
+        }
 
         bool add_weighted(double hash, IPPacket p) {
             QMaxItem *a = new QMaxItem(hash, p);
@@ -106,35 +104,14 @@ namespace TDHH {
             }
             delete a;
             return added;
-        };
-
-        bool add_weighted(double hash, IPPacket p) {
-            QMaxItem *a = new QMaxItem(hash, p);
-            bool added = false;
-            if (qMinHeap.size() < q) {
-                qMinHeap.push_back(*a);
-                push_heap(qMinHeap.begin(),qMinHeap.end(), reverseComp());
-                added = true;
-            } else {
-                QMaxItem min_item = qMinHeap.front();
-                if (*a < min_item) {
-                    pop_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
-                    qMinHeap.pop_back();
-                    qMinHeap.push_back(*a);
-                    push_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
-                    added = true;
-                }
-            }
-            delete a;
-            return added;
-        };
+        }
 
         vector<QMaxItem> getSample() const {
             return qMinHeap;
         }
 
         void merge(const QMax &rhs) {
-            auto v2 = rhs.getSample();
+            const auto& v2 = rhs.getSample();
             qMinHeap.insert(qMinHeap.end(), v2.begin(), v2.end());
             sort_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
             qMinHeap.resize(q);
@@ -144,4 +121,4 @@ namespace TDHH {
 }
 
 
-#endif //NEWTDHH_QMAX_HPP
+#endif //TDHH_QMAX_HPP

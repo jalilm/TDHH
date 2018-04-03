@@ -2,8 +2,8 @@
 // Created by jalilm on 22/03/2018.
 //
 
-#ifndef NEWTDHH_PACKET_HPP
-#define NEWTDHH_PACKET_HPP
+#ifndef TDHH_PACKET_HPP
+#define TDHH_PACKET_HPP
 
 #include <string>
 #include <sstream>
@@ -62,15 +62,11 @@ namespace TDHH {
         int dst_port;
         string protocol;
     public:
-        TransportPacket(string src_ip, string dst_ip, int src_port, int dst_port, string protocol, int id) : IPPacket(
-                src_ip,
-                dst_ip, id),
-                                                                                                             src_port(
-                                                                                                                     src_port),
-                                                                                                             dst_port(
-                                                                                                                     dst_port),
-                                                                                                             protocol(
-                                                                                                                     protocol) {}
+        TransportPacket(string src_ip, string dst_ip, int src_port, int dst_port, string protocol, int id) :
+                IPPacket(src_ip,dst_ip, id),
+                src_port(src_port),
+                dst_port(dst_port),
+                protocol(protocol) {}
 
         string getReprString() {
             stringstream sstm;
@@ -87,4 +83,4 @@ namespace TDHH {
     };
 }
 
-#endif //NEWTDHH_PACKET_HPP
+#endif //TDHH_PACKET_HPP

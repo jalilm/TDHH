@@ -2,8 +2,8 @@
 // Created by jalilm on 26/03/18.
 //
 
-#ifndef NEWTDHH_ROUTER_HPP
-#define NEWTDHH_ROUTER_HPP
+#ifndef TDHH_ROUTER_HPP
+#define TDHH_ROUTER_HPP
 
 #include <string>
 #include "PacketsReader.hpp"
@@ -12,19 +12,44 @@
 #include <map>
 #include <boost/functional/hash.hpp>
 #include <boost/math/special_functions/beta.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace TDHH {
     using namespace std;
     using namespace hll;
 
     class Router {
+
+    private:
+        template<typename URNG>
+        double beta_sample(URNG &engine, double a, double b) {
+            if (b == 0) {
+                return 0;
+            }
+            static std::uniform_real_distribution<double> unif(0, 1);
+            double p = unif(engine);
+            return boost::math::ibeta_inv(a, b, p); // Use Boost policies if it's not fast enough
+        }
+
+        int hashCode(string s) {
+            boost::hash<std::string> string_hash;
+            return string_hash(s);
+        }
+
     protected:
         string filename;
         PacketsReader pr;
-    public:
-        Router(const char *filename) : filename(filename), pr(filename) {};
 
-        void reset() { pr.reset(); };
+    public:
+        Router(const char *filename) :
+        filename(filename),
+        pr(filename, boost::starts_with(filename, "../files/UCLA/lasr.cs.ucla.edu/ddos/traces/public")?
+                        PacketsReader::UCLA : PacketsReader::CAIDA)
+        {}
+
+        void reset() {
+            pr.reset();
+        }
 
         map<int, double> volumeEstimation(double eps, double delta = 0) {
             map<int, double> res;
@@ -36,7 +61,7 @@ namespace TDHH {
             int i = 0;
             while (pkt != NULL) {
                 ++i;
-                auto pkt_string = pkt->getReprString();
+                const auto& pkt_string = pkt->getReprString();
                 hll.add(pkt_string.c_str(), pkt_string.size());
                 delete pkt;
                 if (i % 1000000 == 0) {
@@ -46,7 +71,7 @@ namespace TDHH {
             }
             res.insert(pair<int, double>(i, hll.estimate()));
             return res;
-        };
+        }
 
         map<unsigned long long int, double> weightedVolumeEstimation(double eps, double delta = 0) {
             map<unsigned long long int, double> res;
@@ -58,7 +83,7 @@ namespace TDHH {
             unsigned long long int i = 0;
             int num_pkts = 0;
             while (pkt != NULL) {
-                auto pkt_string = pkt->getReprString();
+                const auto& pkt_string = pkt->getReprString();
                 int w = pkt->weight;
                 i += w;
                 ++num_pkts;
@@ -71,8 +96,7 @@ namespace TDHH {
             }
             res.insert(pair<unsigned long long int, double>(i, hll.estimate()));
             return res;
-        };
-
+        }
 
         QMax sample(double eps, double delta) {
             unsigned int chi = ceil(3.0 / (eps * eps) * log2(2.0 / delta));
@@ -84,22 +108,6 @@ namespace TDHH {
                 pkt = pr.getNextIPPacket();
             }
             return chiMax;
-        };
-
-        template<typename URNG>
-        double beta_sample(URNG &engine, double a, double b) {
-            if (b == 0) {
-                return 0;
-            }
-            static std::uniform_real_distribution<double> unif(0, 1);
-            double p = unif(engine);
-            return boost::math::ibeta_inv(a, b, p);
-            // Use Boost policies if it's not fast enough
-        }
-
-        int hashCode(string s) {
-            boost::hash<std::string> string_hash;
-            return string_hash(s);
         }
 
         QMax weighted_sample(double eps, double delta) {
@@ -125,7 +133,6 @@ namespace TDHH {
             return chiMax;
         }
     };
-};
+}
 
-
-#endif //NEWTDHH_ROUTER_HPP
+#endif //TDHH_ROUTER_HPP

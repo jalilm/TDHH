@@ -101,7 +101,7 @@ namespace hll {
 
         void add(const char *str, int len) {
             uint32_t hash;
-            MurmurHash3_x86_32((const void*) str, len, seed, (void *) &hash);
+            MurmurHash3_x86_32((const void *) str, len, seed, (void *) &hash);
             uint32_t index = hash >> (32 - b_);
             uint8_t rank = _GET_CLZ((hash << b_), 32 - b_);
             if (rank > M_[index]) {
