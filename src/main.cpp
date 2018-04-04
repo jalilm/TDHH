@@ -31,13 +31,13 @@ vector<double> MSRE(vector<map<t1, t2> >  & res) {
             square_sum += pow((x1 - x.first) / (x.first), 2);
         }
         double msre = square_sum / double(i);
-        //cout << x.first << "," << msre << endl;
+        cout << x.first << "," << msre << endl;
         msres.push_back(msre);
     }
     return msres;
 }
 
-vector<double> vol_est(double eps, double delta = 1, const char* filename="../files/pkts.csv") {
+vector<double> vol_est(double eps, double delta, const char* filename) {
     vector<double> estimations;
     Router router(filename);
     vector<map<int, double> > result;
@@ -52,7 +52,7 @@ vector<double> vol_est(double eps, double delta = 1, const char* filename="../fi
 }
 
 // TODO: the weighted_Add at hll, does not work as expected - only the o(w) variant works.
-vector<double> weighted_vol_est(double eps, double delta = 1, const char* filename="../files/test.csv") {
+vector<double> weighted_vol_est(double eps, double delta, const char* filename) {
     vector<double> estimations;
     Router router(filename);
     vector<map<unsigned long long int, double> > result;
@@ -66,7 +66,7 @@ vector<double> weighted_vol_est(double eps, double delta = 1, const char* filena
     return estimations;
 }
 
-vector<map<string,double> > dist_sample(double eps, double delta, const char* filename="../files/test.csv") {
+vector<map<string,double> > dist_sample(double eps, double delta, const char* filename) {
     vector<map<string,double> > samples;
     Router router(filename);
     for (int i = 0; i < ITERATIONS; ++i) {
@@ -110,16 +110,21 @@ void freq_est(double eps, double delta, const char * filename, string resfile) {
 //
 //        cout << endl;
         std::ifstream is(resfile);
-        double square_sum = 0;
+        double S;
+        is >> S;
         double flow_number = 1;
+        double more_than = 0;
         while(is.good()) {
             double real_freq;
             string flow;
             is >> real_freq;
             is >> flow;
             double est_freq = sample[flow]/p;
-            square_sum += pow((real_freq - est_freq) / real_freq, 2);
-            cout << flow_number << "," << square_sum/flow_number << endl;
+            double diff = abs(real_freq - est_freq);
+            if (diff > eps * S) {
+                ++more_than;
+            }
+            cout << flow_number << "," << more_than/flow_number << endl;
             ++flow_number;
         }
     }
@@ -145,16 +150,21 @@ void weighted_freq_est(double eps, double delta, const char * filename, string r
 //
 //        cout << endl;
         std::ifstream is(resfile);
-        double square_sum = 0;
+        double B;
+        is >> B;
         double flow_number = 1;
+        double more_than = 0;
         while(is.good()) {
             double real_freq;
             string flow;
             is >> real_freq;
             is >> flow;
             double est_freq = sample[flow]/p;
-            square_sum += pow((real_freq - est_freq) / real_freq, 2);
-            cout << flow_number << "," << square_sum/flow_number << endl;
+            double diff = abs(real_freq - est_freq);
+            if (diff > eps * B) {
+                ++more_than;
+            }
+            cout << flow_number << "," << more_than/flow_number << endl;
             ++flow_number;
         }
     }
@@ -181,16 +191,16 @@ void weighted_heavy_hitter(double eps, double delta, double teta, const char* fi
 }
 
 int main() {
-    std::ofstream out("../results/weighted_freq_est.txt");
+    std::ofstream out("../results/ucla5_weighted_vol_est.txt");
     std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
     std::cout.rdbuf(out.rdbuf()); //redirect std::cout to out.txt!
-    //vol_est(0.05);
-    //weighted_vol_est(0.05);
+    //vol_est(0.05,1,"../files/UCLA/lasr.cs.ucla.edu/ddos/traces/public/trace5/UCLA5.csv");
+    //weighted_vol_est(0.05,1,"../files/UCLA/lasr.cs.ucla.edu/ddos/traces/public/trace5/weighted_UCLA5.csv");
     //dist_sample(0.05, 0.05);
     //weighted_dist_sample(0.5, 0.5);
-    //freq_est(0.1, 0.1, "../files/pkts.csv", "../files/pkts_flows_count.csv");
-    weighted_freq_est(0.1, 0.1, "../files/pkts.csv", "../files/pkts_weighted_flows_count.csv");
-    //heavy_hitter(0.1, 0.1, 0.1,"../files/pkts.csv", "../files/pkts_flows_count.csv");
+    //freq_est(0.01, 0.1, "../files/UCLA/lasr.cs.ucla.edu/ddos/traces/public/trace5/UCLA5.csv", "../files/UCLA5_flows_count.csv");
+    //weighted_freq_est(0.04, 0.1, "../files/UCLA/lasr.cs.ucla.edu/ddos/traces/public/trace5/weighted_UCLA5.csv", "../files/UCLA5_weighted_flows_count.csv");
+    heavy_hitter(0.1, 0.1, 0.1,"../files/pkts.csv", "../files/pkts_flows_count.csv");
     //weighted_heavy_hitter(0.1, 0.1, 0.1,"../files/pkts.csv", "../files/pkts_weighted_flows_count.csv");
     std::cout.rdbuf(coutbuf); //reset to standard output again
     return 0;
