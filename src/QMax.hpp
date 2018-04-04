@@ -49,7 +49,7 @@ namespace TDHH {
             }
         };
 
-        unsigned int q;
+
         vector<QMaxItem> qMinHeap;
         std::mt19937 *engine;
 
@@ -59,6 +59,7 @@ namespace TDHH {
         }
 
     public:
+        unsigned int q;
         QMax(unsigned int q) : q(q) {
             std::random_device rd;
             engine = new std::mt19937(rd());
@@ -106,12 +107,17 @@ namespace TDHH {
             return added;
         }
 
-        vector<QMaxItem> getSample() const {
-            return qMinHeap;
+        map<string, double> getSample() const {
+            map<string, double> sample;
+            for (const auto& item : qMinHeap) {
+                string flow = item.p.getFlowString();
+                sample[flow]++;
+            }
+            return sample;
         }
 
         void merge(const QMax &rhs) {
-            const auto& v2 = rhs.getSample();
+            const auto& v2 = rhs.qMinHeap;
             qMinHeap.insert(qMinHeap.end(), v2.begin(), v2.end());
             sort_heap(qMinHeap.begin(), qMinHeap.end(), reverseComp());
             qMinHeap.resize(q);

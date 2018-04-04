@@ -76,7 +76,7 @@ namespace TDHH {
         map<unsigned long long int, double> weightedVolumeEstimation(double eps, double delta = 0) {
             map<unsigned long long int, double> res;
             std::random_device rd;
-            int bits = ceil(log2(pow(eps, -2)));
+            int bits = ceil(log2(pow(eps, -2)*5+33));
             HyperLogLog hll(bits);
             hll.set_seed(rd());
             auto pkt = pr.getNextWeightedIPPacket();

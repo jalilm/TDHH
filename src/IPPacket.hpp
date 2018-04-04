@@ -27,9 +27,15 @@ namespace TDHH {
             return Str;
         }
 
-        string getReprString() {
+        virtual string getReprString() const {
             stringstream sstm;
             sstm << src_ip << "." << dst_ip << "." << id;
+            return sstm.str();
+        }
+
+        virtual string getFlowString() const {
+            stringstream sstm;
+            sstm << src_ip << ":" << dst_ip;
             return sstm.str();
         }
     };
@@ -47,11 +53,6 @@ namespace TDHH {
             Str << string("IP_SRC:") << v.src_ip << ",IP_DST:" << v.dst_ip << ",ID:" << v.id << ",WEIGHT:" << v.weight;
             return Str;
         }
-        string getReprString() {
-            stringstream sstm;
-            sstm << src_ip << "." << dst_ip << "." << id << "." << weight;
-            return sstm.str();
-        }
     };
 
 
@@ -68,9 +69,15 @@ namespace TDHH {
                 dst_port(dst_port),
                 protocol(protocol) {}
 
-        string getReprString() {
+        string getReprString() const{
             stringstream sstm;
             sstm << src_ip << "." << dst_ip << "." << id << "." << src_port << "." << dst_port;
+            return sstm.str();
+        }
+
+        string getFlowString() const {
+            stringstream sstm;
+            sstm << src_ip << ":" << dst_ip << ":" << src_port << ":" << dst_port;
             return sstm.str();
         }
 

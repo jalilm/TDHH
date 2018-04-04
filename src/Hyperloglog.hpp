@@ -14,7 +14,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include "MurmurHash3.hpp"
-
+#include <string>
 #define HLL_HASH_SEED 313
 
 #if defined(__has_builtin) && (defined(__GNUC__) || defined(__clang__))
@@ -41,7 +41,17 @@ inline uint8_t _get_leading_zero_count(uint32_t x, uint8_t b) {
 
 }
 
+inline uint8_t _get_trailing_zero_count(uint32_t x, uint8_t b) {
+    uint8_t v = 1;
+    while (x % 2 == 0) {
+        v++;
+        x >>= 1;
+    }
+    return v;
+}
+
 #define _GET_CLZ(x, b) _get_leading_zero_count(x, b)
+#define _GET_NCLZ(x, b) _get_trailing_zero_count(x, b)
 #endif /* defined(__GNUC__) */
 
 namespace hll {
@@ -110,16 +120,22 @@ namespace hll {
         }
 
         void add_weighted(const char *str, int len, uint32_t weight) {
-            uint32_t hash;
-            MurmurHash3_x86_32(str, len, seed, (void *) &hash);
-            double dhash = double(hash) / double(UINT32_MAX);
-            dhash = (1 - pow((1.0 - dhash), (1.0 / double(weight))));
-            hash = dhash * UINT32_MAX;
-            uint32_t index = hash >> (32 - b_);
-            uint8_t rank = _GET_CLZ((hash << b_), 32 - b_);
-            if (rank > M_[index]) {
-                M_[index] = rank;
+            for(int i =0 ; i < weight; ++i) {
+                std::string new_str(str);
+                new_str = new_str.append(".");
+                new_str = new_str.append(std::to_string(i));
+                add(new_str.c_str(), new_str.size());
             }
+//            uint64_t hash;
+//            MurmurHash3_x86_32(str, len, seed, (void *) &hash);
+//            uint32_t index = hash >> (32 - b_);
+//            double dhash = double(hash) / double(UINT32_MAX);
+//            dhash = (1 - pow((1.0 - dhash), (1.0 / double(weight))));
+//            //dhash = pow(dhash, (1.0 / double(weight)));
+//            uint8_t rank = floor(-1 * log2(dhash));
+//            if (rank > M_[index]) {
+//                M_[index] = rank;
+//            }
         }
 
         /**

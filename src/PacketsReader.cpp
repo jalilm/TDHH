@@ -12,17 +12,39 @@ namespace TDHH {
 
     map<string, string> PacketsReader::getNextUCLAPacket(const CSVIterator& it) {
         map<string, string> res;
-        res.insert(pair<string, string>("id", std::to_string(id++)));
-        res.insert(pair<string, string>("IP_SRC", (*it)[1]));
-        res.insert(pair<string, string>("IP_DST", (*it)[2]));
-        res.insert(pair<string, string>("PORT_SRC", (*it)[3]));
-        res.insert(pair<string, string>("PORT_DST", (*it)[4]));
-        if ((*it)[5].compare("U") == 0) {
-            res.insert(pair<string, string>("length", std::to_string(stoi((*it)[6]) + 64))); // add 64 bytes of headers.
-            res.insert(pair<string, string>("proto", "UDP (17)"));
-        } else {
-            res.insert(pair<string, string>("length", std::to_string(stoi((*it)[5]) + 64))); // add 64 bytes of headers.
-            res.insert(pair<string, string>("proto", "TCP (6)"));
+        int i = 0;
+        while(i < (*it).size()){
+            pair<string, string> p;
+            switch(i){
+                case 0:
+                    p = pair<string, string>("id", std::to_string(id++));
+                    break;
+                case 1:
+                    p = pair<string, string>("IP_SRC", (*it)[1]);
+                    break;
+                case 2:
+                    p = pair<string, string>("IP_DST", (*it)[2]);
+                    break;
+                case 3:
+                    p = pair<string, string>("PORT_SRC", (*it)[3]);
+                    break;
+                case 4:
+                    p = pair<string, string>("PORT_DST", (*it)[4]);
+                    break;
+                case 5:
+                    if ((*it)[5].compare("U") == 0) {
+                        res.insert(pair<string, string>("length", std::to_string(stoi((*it)[6]) + 64))); // add 64 bytes of headers.
+                        res.insert(pair<string, string>("proto", "UDP (17)"));
+                    } else {
+                        res.insert(pair<string, string>("length", std::to_string(stoi((*it)[5]) + 64))); // add 64 bytes of headers.
+                        res.insert(pair<string, string>("proto", "TCP (6)"));
+                    }
+                    break;
+                default:
+                    return res;
+            }
+            res.insert(p);
+            ++i;
         }
         return res;
     }
@@ -45,7 +67,7 @@ namespace TDHH {
         } else if (dataset == UCLA) {
             return getNextUCLAPacket(it);
         } else {
-            throw std::runtime_error("Not CAIDA not UCLA dataset");
+            throw std::runtime_error("Not CAIDA nor UCLA dataset");
         }
     }
 
@@ -62,7 +84,11 @@ namespace TDHH {
         if (it == CSVIterator()) {
             return NULL;
         }
-        const map<string, string> & m = getNextPacket(it++);
+
+        const map<string, string>& m = getNextPacket(it++);
+        if (m.size() < 6) { // This packet does not have a weight, so we skip it.
+            return getNextWeightedIPPacket();
+        }
         return new WeightedIPPacket(m.find(string("IP_SRC"))->second, m.find(string("IP_DST"))->second,
                                     stoi(m.find(string("id"))->second), stoi(m.find(string("length"))->second));
     }
