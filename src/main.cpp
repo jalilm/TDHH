@@ -173,9 +173,32 @@ void weighted_freq_est(double eps, double delta, const char * filename, string r
 void heavy_hitter(double eps, double delta, double teta, const char* filename, string resfile) {
     vector<map<string,double> > samples;
     Router router(filename);
+    vector<string> THH;
+    vector<string> miceFlows;
+    std::ifstream is(resfile);
+    double S;
+    is >> S;
+    while(is.good()) {
+        double real_freq;
+        string flow;
+        is >> real_freq;
+        is >> flow;
+        if (real_freq >= S*teta) {
+            THH.push_back(flow);
+        } else if (real_freq < S*(teta-eps)) {
+            miceFlows.push_back(flow);
+        }
+    }
     for (int i = 0; i < ITERATIONS; ++i) {
+        vector<string> HH;
         QMax qmax = router.heavy_hitters(eps, delta);
         const auto &v = qmax.getSample();
+        for(const auto &item : v) {
+            if(item.second >= (teta - eps/2.0)*qmax.q){
+                HH.push_back(item.first);
+            }
+        }
+        //TODO: produce the needed results.
         router.reset();
     }
 }
@@ -183,9 +206,32 @@ void heavy_hitter(double eps, double delta, double teta, const char* filename, s
 void weighted_heavy_hitter(double eps, double delta, double teta, const char* filename, string resfile) {
     vector<map<string,double> > samples;
     Router router(filename);
+    vector<string> THH;
+    vector<string> miceFlows;
+    std::ifstream is(resfile);
+    double S;
+    is >> S;
+    while(is.good()) {
+        double real_freq;
+        string flow;
+        is >> real_freq;
+        is >> flow;
+        if (real_freq >= S*teta) {
+            THH.push_back(flow);
+        } else if (real_freq < S*(teta-eps)) {
+            miceFlows.push_back(flow);
+        }
+    }
     for (int i = 0; i < ITERATIONS; ++i) {
+        vector<string> HH;
         QMax qmax = router.weighted_heavy_hitters(eps, delta);
         const auto &v = qmax.getSample();
+        for(const auto &item : v) {
+            if(item.second >= (teta - eps/2.0)*qmax.q){
+                HH.push_back(item.first);
+            }
+        }
+        //TODO: produce the needed results.
         router.reset();
     }
 }
@@ -201,7 +247,7 @@ int main() {
     //freq_est(0.01, 0.1, "../files/UCLA/lasr.cs.ucla.edu/ddos/traces/public/trace5/UCLA5.csv", "../files/UCLA5_flows_count.csv");
     //weighted_freq_est(0.04, 0.1, "../files/UCLA/lasr.cs.ucla.edu/ddos/traces/public/trace5/weighted_UCLA5.csv", "../files/UCLA5_weighted_flows_count.csv");
     heavy_hitter(0.1, 0.1, 0.1,"../files/pkts.csv", "../files/pkts_flows_count.csv");
-    //weighted_heavy_hitter(0.1, 0.1, 0.1,"../files/pkts.csv", "../files/pkts_weighted_flows_count.csv");
+    weighted_heavy_hitter(0.1, 0.1, 0.1,"../files/pkts.csv", "../files/pkts_weighted_flows_count.csv");
     std::cout.rdbuf(coutbuf); //reset to standard output again
     return 0;
 }
