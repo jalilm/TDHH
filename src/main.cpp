@@ -90,7 +90,7 @@ vector<map<string,double> > weighted_dist_sample(double eps, double delta, const
     return samples;
 }
 
-void freq_est(double eps, double delta, const char * filename="../files/test.csv") {
+void freq_est(double eps, double delta, const char * filename, string resfile) {
     const auto &estimations = vol_est(eps / 2, delta / 2, filename);
     const auto &samples = dist_sample(eps / 2, delta / 2, filename);
     for (int i = 0; i < ITERATIONS; ++i) {
@@ -99,20 +99,33 @@ void freq_est(double eps, double delta, const char * filename="../files/test.csv
         map<string, int> int_sample;
         double q = sample.size();
         double p = q / estimate;
-        for (const auto &s :sample) {
-            int_sample.insert(pair<string,int>(s.first, s.second/p));
+//        for (const auto &s :sample) {
+//            int_sample.insert(pair<string,int>(s.first, s.second/p));
+//        }
+//
+//        const auto & reverseTest = flip_map(int_sample);
+//        cout << "\nContents of flipped map in descending order:\n" << endl;
+//        for (multimap<int, string>::const_reverse_iterator it = reverseTest.rbegin(); it != reverseTest.rend(); ++it)
+//            cout << it->first << " " << it->second << endl;
+//
+//        cout << endl;
+        std::ifstream is(resfile);
+        double square_sum = 0;
+        double flow_number = 1;
+        while(is.good()) {
+            double real_freq;
+            string flow;
+            is >> real_freq;
+            is >> flow;
+            double est_freq = sample[flow]/p;
+            square_sum += pow((real_freq - est_freq) / real_freq, 2);
+            cout << flow_number << "," << square_sum/flow_number << endl;
+            ++flow_number;
         }
-
-        const auto & reverseTest = flip_map(int_sample);
-        cout << "\nContents of flipped map in descending order:\n" << endl;
-        for (multimap<int, string>::const_reverse_iterator it = reverseTest.rbegin(); it != reverseTest.rend(); ++it)
-            cout << it->first << " " << it->second << endl;
-
-        cout << endl;
     }
 }
 
-void weighted_freq_est(double eps, double delta, const char * filename="../files/test.csv") {
+void weighted_freq_est(double eps, double delta, const char * filename, string resfile) {
     const auto &estimations = weighted_vol_est(eps / 2, delta / 2, filename);
     const auto &samples = weighted_dist_sample(eps / 2, delta / 2, filename);
     for (int i = 0; i < ITERATIONS; ++i) {
@@ -121,24 +134,64 @@ void weighted_freq_est(double eps, double delta, const char * filename="../files
         map<string, int> int_sample;
         double q = sample.size();
         double p = q / estimate;
-        for (const auto &s :sample) {
-            int_sample.insert(pair<string,int>(s.first, s.second/p));
+//        for (const auto &s :sample) {
+//            int_sample.insert(pair<string,int>(s.first, s.second/p));
+//        }
+//
+//        const auto & reverseTest = flip_map(int_sample);
+//        cout << "\nContents of flipped map in descending order:\n" << endl;
+//        for (multimap<int, string>::const_reverse_iterator it = reverseTest.rbegin(); it != reverseTest.rend(); ++it)
+//            cout << it->first << " " << it->second << endl;
+//
+//        cout << endl;
+        std::ifstream is(resfile);
+        double square_sum = 0;
+        double flow_number = 1;
+        while(is.good()) {
+            double real_freq;
+            string flow;
+            is >> real_freq;
+            is >> flow;
+            double est_freq = sample[flow]/p;
+            square_sum += pow((real_freq - est_freq) / real_freq, 2);
+            cout << flow_number << "," << square_sum/flow_number << endl;
+            ++flow_number;
         }
-
-        const auto & reverseTest = flip_map(int_sample);
-        cout << "\nContents of flipped map in descending order:\n" << endl;
-        for (multimap<int, string>::const_reverse_iterator it = reverseTest.rbegin(); it != reverseTest.rend(); ++it)
-            cout << it->first << " " << it->second << endl;
-
-        cout << endl;
     }
 }
+
+void heavy_hitter(double eps, double delta, double teta, const char* filename, string resfile) {
+    vector<map<string,double> > samples;
+    Router router(filename);
+    for (int i = 0; i < ITERATIONS; ++i) {
+        QMax qmax = router.heavy_hitters(eps, delta);
+        const auto &v = qmax.getSample();
+        router.reset();
+    }
+}
+
+void weighted_heavy_hitter(double eps, double delta, double teta, const char* filename, string resfile) {
+    vector<map<string,double> > samples;
+    Router router(filename);
+    for (int i = 0; i < ITERATIONS; ++i) {
+        QMax qmax = router.weighted_heavy_hitters(eps, delta);
+        const auto &v = qmax.getSample();
+        router.reset();
+    }
+}
+
 int main() {
+    std::ofstream out("../results/weighted_freq_est.txt");
+    std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+    std::cout.rdbuf(out.rdbuf()); //redirect std::cout to out.txt!
     //vol_est(0.05);
     //weighted_vol_est(0.05);
     //dist_sample(0.05, 0.05);
     //weighted_dist_sample(0.5, 0.5);
-    freq_est(0.1, 0.1, "../files/pkts.csv");
-    //weighted_freq_est(0.1, 0.1);
+    //freq_est(0.1, 0.1, "../files/pkts.csv", "../files/pkts_flows_count.csv");
+    weighted_freq_est(0.1, 0.1, "../files/pkts.csv", "../files/pkts_weighted_flows_count.csv");
+    //heavy_hitter(0.1, 0.1, 0.1,"../files/pkts.csv", "../files/pkts_flows_count.csv");
+    //weighted_heavy_hitter(0.1, 0.1, 0.1,"../files/pkts.csv", "../files/pkts_weighted_flows_count.csv");
+    std::cout.rdbuf(coutbuf); //reset to standard output again
     return 0;
 }

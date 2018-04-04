@@ -98,8 +98,13 @@ namespace TDHH {
             return res;
         }
 
-        QMax sample(double eps, double delta) {
-            unsigned int chi = ceil(3.0 / (eps * eps) * log2(2.0 / delta));
+        QMax sample(double eps, double delta, bool formula_chi = true) {
+            unsigned int chi;
+            if (formula_chi) {
+                 chi = ceil(3.0 / (eps * eps) * log2(2.0 / delta));
+            } else {
+                chi = ceil(9.0 / (eps * eps) * log2(2.0 / (delta * eps)));
+            }
             QMax chiMax = QMax(chi);
             auto pkt = pr.getNextIPPacket();
             while (pkt != NULL) {
@@ -110,8 +115,13 @@ namespace TDHH {
             return chiMax;
         }
 
-        QMax weighted_sample(double eps, double delta) {
-            unsigned int chi = ceil(3.0 / (eps * eps) * log2(2.0 / delta));
+        QMax weighted_sample(double eps, double delta, bool formula_chi = true) {
+            unsigned int chi;
+            if (formula_chi) {
+                chi = ceil(3.0 / (eps * eps) * log2(2.0 / delta));
+            } else {
+                chi = ceil(9.0 / (eps * eps) * log2(2.0 / (delta * eps)));
+            }
             QMax chiMax = QMax(chi);
             auto pkt = pr.getNextWeightedIPPacket();
             while (pkt != NULL) {
@@ -131,6 +141,14 @@ namespace TDHH {
                 pkt = pr.getNextWeightedIPPacket();
             }
             return chiMax;
+        }
+
+        QMax heavy_hitters(double eps, double delta) {
+            return sample(eps, delta, false);
+        }
+
+        QMax weighted_heavy_hitters(double eps, double delta) {
+            return weighted_sample(eps, delta, false);
         }
     };
 }
