@@ -1,9 +1,9 @@
 #!/bin/bash
 
-TRACE_FILE="UCLA5.csv"
-DIR="../datasets_files/UCLA/"
-RES_PREFIX="ucla_flows_count"
-TOTAL_FILE="ucla_total_flows"
+TRACE_FILE="caida.csv"
+DIR="../datasets_files/CAIDA16/"
+RES_PREFIX="caida_flows_count"
+TOTAL_FILE="caida_total_flows"
 STEP=1000000
 
 count=0
@@ -15,7 +15,7 @@ for i in $sizes; do
     let si=i+1;
     let j=i+${STEP};
     let k=j+1;
-    sed -n "${si},${j}p;${k}q" ${DIR}${TRACE_FILE} | cut -d"," -f2,3 | tr "," ":" | sort | uniq -c | sort -n -r > ${DIR}${RES_PREFIX}-${j}.csv;
+    sed -n "${si},${j}p;${k}q" ${DIR}${TRACE_FILE} | cut -d"," -f4,5 | tr "," ":" | cut -d":" -f2,4 | sort | uniq -c | sort -n -r > ${DIR}${RES_PREFIX}-${j}.csv;
     let count+=`awk '{s+=$1}END{print s}' ${DIR}${RES_PREFIX}-${j}.csv`;
     echo ${count} > ${DIR}${TOTAL_FILE};
     cat ${DIR}${TOTAL_FILE} ${DIR}${RES_PREFIX}-${j}.csv > ${DIR}tmp;

@@ -43,7 +43,7 @@ namespace TDHH {
     public:
         Router(const char *filename) :
         filename(filename),
-        pr(filename, boost::starts_with(filename, "../files/UCLA/lasr.cs.ucla.edu/ddos/traces/public")?
+        pr(filename, boost::starts_with(filename, "../datasets_files/UCLA")?
                         PacketsReader::UCLA : PacketsReader::CAIDA)
         {}
 
@@ -143,8 +143,23 @@ namespace TDHH {
             return chiMax;
         }
 
-        QMax heavy_hitters(double eps, double delta) {
-            return sample(eps, delta, false);
+        map<unsigned int, map<string, double> > heavy_hitters(double eps, double delta) {
+            map<unsigned int, map<string, double> > res;
+            unsigned int chi = ceil(9.0 / (eps * eps) * log2(2.0 / (delta * eps)));
+            unsigned int num_pkts = 0;
+            QMax chiMax = QMax(chi);
+            auto pkt = pr.getNextIPPacket();
+            while (pkt != NULL) {
+                chiMax.add(*pkt);
+                delete pkt;
+                pkt = pr.getNextIPPacket();
+                ++num_pkts;
+                if((num_pkts % 1000000) == 0) {
+                    res.insert(pair<unsigned int, map<string, double> >(num_pkts, chiMax.getSample()));
+                }
+            }
+            res.insert(pair<unsigned int, map<string, double> >(num_pkts, chiMax.getSample()));
+            return res;
         }
 
         QMax weighted_heavy_hitters(double eps, double delta) {

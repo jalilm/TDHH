@@ -66,7 +66,7 @@ namespace TDHH {
         }
 
         ~QMax() {
-            delete engine;
+            //delete engine;
         }
 
         void add(IPPacket p) {
