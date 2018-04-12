@@ -17,7 +17,7 @@
 namespace TDHH {
     using namespace std;
     using namespace hll;
-    
+
     const int ITERATIONS = 10;
 
     class Router {

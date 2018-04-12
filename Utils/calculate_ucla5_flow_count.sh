@@ -1,7 +1,7 @@
 #!/bin/bash
 
-TRACE_FILE="ucla31.csv"
-DIR="../datasets_files/UCLA31/"
+TRACE_FILE="UCLA.csv"
+DIR="../datasets_files/UCLA/"
 RES_PREFIX="ucla_flows_count"
 TOTAL_FILE="ucla_total_flows"
 STEP=1000000
