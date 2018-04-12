@@ -126,13 +126,15 @@ namespace hll {
                 new_str = new_str.append(std::to_string(i));
                 add(new_str.c_str(), new_str.size());
             }
-//            uint64_t hash;
+//            //TODO: fix O(1) WVE.
+//            uint32_t hash;
 //            MurmurHash3_x86_32(str, len, seed, (void *) &hash);
 //            uint32_t index = hash >> (32 - b_);
 //            double dhash = double(hash) / double(UINT32_MAX);
 //            dhash = (1 - pow((1.0 - dhash), (1.0 / double(weight))));
-//            //dhash = pow(dhash, (1.0 / double(weight)));
+//            //hash = dhash * double(UINT32_MAX);
 //            uint8_t rank = floor(-1 * log2(dhash));
+//            //uint8_t rank = _GET_CLZ((hash << b_), 32 - b_);
 //            if (rank > M_[index]) {
 //                M_[index] = rank;
 //            }

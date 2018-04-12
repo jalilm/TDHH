@@ -20,7 +20,7 @@ namespace TDHH {
     class PacketsReader {
 
     public:
-        enum Dataset {CAIDA, UCLA};
+        enum Dataset {CAIDA, UCLA, UNIV};
 
     private:
         Dataset dataset;
@@ -31,11 +31,13 @@ namespace TDHH {
 
         map<string, string> getNextUCLAPacket(const CSVIterator& it);
         map<string, string> getNextCAIDAPacket(const CSVIterator& it);
+        map<string, string> getNextUNIVPacket(const CSVIterator& it);
         map<string, string> getNextPacket(const CSVIterator& it);
+
 
     public:
         PacketsReader(string filename, Dataset dataset=CAIDA) : filename(filename), dataset(dataset), id(0) {
-            infile = ifstream(filename);
+            infile = ifstream(this->filename);
             it = CSVIterator(infile);
         }
 
