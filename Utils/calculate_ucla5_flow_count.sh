@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TRACE_FILE="UCLA5.csv"
+TRACE_FILE="UCLA.csv"
 DIR="../datasets_files/UCLA/"
 RES_PREFIX="ucla_flows_count"
 TOTAL_FILE="ucla_total_flows"

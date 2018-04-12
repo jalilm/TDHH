@@ -1,4 +1,12 @@
 #!/bin/bash
 
-tcpdump ip -v -r ../datasets_files/equinix-chicago.dirA.20160121-130000.UTC.anon.pcap -n | awk 'BEGIN {accum_line = "";} /^..:/{if(length(accum_line)){print accum_line; accum_line = "";}} {accum_line = accum_line " " $0;} END {if(length(accum_line)){print accum_line; }}' | grep -v IP6 | grep IP | sed -E "s/.*id ([^,]*),.* proto ([^,]*),.* length ([^,]*)\)     ([^.]*\.[^.]*\.[^.]*\.[^.]*)\.*(.*) > ([^.]*\.[^.]*\.[^.]*\.[^.:]*)\.*([^:]*).*/id:\1,proto:\2,length:\3,IP_SRC:\4,IP_DST:\6,PORT_SRC:\5,PORT_DST:\7/" > ../datasets_files/CAIDA16/caida.csv
+if [[ $# -eq 2 ]]
+then
+    FILE="$1"
+    RES_FILE="$2"
+else
+    FILE="../datasets_files/equinix-chicago.dirA.20160121-130000.UTC.anon.pcap"
+    RES_FILE="../datasets_files/CAIDA/caida.csv"
+fi
 
+tcpdump -v -r ${FILE} -n | awk 'BEGIN {accum_line = "";} /^..:/{if(length(accum_line)){print accum_line; accum_line = "";}} {accum_line = accum_line " " $0;} END {if(length(accum_line)){print accum_line; }}' | grep " IP " | sed -E "s/.*id ([^,]*),.* proto ([^,]*),.* length ([^,]*)\)     ([^.]*\.[^.]*\.[^.]*\.[^.]*)\.*(.*) > ([^.]*\.[^.]*\.[^.]*\.[^.:]*)\.*([^:]*).*/\1,\2,\3,\4,\6,\5,\7/" > ${RES_FILE}

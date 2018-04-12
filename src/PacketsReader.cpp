@@ -49,6 +49,42 @@ namespace TDHH {
         return res;
     }
 
+    map<string, string> PacketsReader::getNextUNIVPacket(const CSVIterator& it) {
+        map<string, string> res;
+        int i = 0;
+        while(i < (*it).size()){
+            pair<string, string> p;
+            switch(i){
+                case 0:
+                    p = pair<string, string>("id", (*it)[0]);
+                    break;
+                case 3:
+                    p = pair<string, string>("IP_SRC", (*it)[3]);
+                    break;
+                case 4:
+                    p = pair<string, string>("IP_DST", (*it)[4]);
+                    break;
+                case 5:
+                    p = pair<string, string>("PORT_SRC", (*it)[5]);
+                    break;
+                case 6:
+                    p = pair<string, string>("PORT_DST", (*it)[6]);
+                    break;
+                case 1:
+                    p = pair<string, string>("proto", (*it)[1]);
+                    break;
+                case 2:
+                    p = pair<string, string>("length", (*it)[2]);
+                    break;
+                default:
+                    return res;
+            }
+            res.insert(p);
+            ++i;
+        }
+        return res;
+    }
+
     map<string, string> PacketsReader::getNextCAIDAPacket(const CSVIterator& it) {
         map<string, string> res;
         for (int j = 0; j < (*it).size(); j++) {
@@ -66,6 +102,8 @@ namespace TDHH {
             return getNextCAIDAPacket(it);
         } else if (dataset == UCLA) {
             return getNextUCLAPacket(it);
+        } else if (dataset == UNIV) {
+            return getNextUNIVPacket(it);
         } else {
             throw std::runtime_error("Not CAIDA nor UCLA dataset");
         }
@@ -85,10 +123,11 @@ namespace TDHH {
             return NULL;
         }
 
-        const map<string, string>& m = getNextPacket(it++);
-        if (m.size() < 6) { // This packet does not have a weight, so we skip it.
-            return getNextWeightedIPPacket();
+        map<string, string> m = getNextPacket(it++);
+        while(m.size() < 6) { // This packet does not have a weight, so we skip it.
+            m = getNextPacket(it++);
         }
+
         return new WeightedIPPacket(m.find(string("IP_SRC"))->second, m.find(string("IP_DST"))->second,
                                     stoi(m.find(string("id"))->second), stoi(m.find(string("length"))->second));
     }

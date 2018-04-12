@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TRACE_FILE="caida.csv"
-DIR="../datasets_files/CAIDA16/"
+DIR="../datasets_files/CAIDA/"
 RES_PREFIX="caida_flows_count"
 TOTAL_FILE="caida_total_flows"
 STEP=1000000
