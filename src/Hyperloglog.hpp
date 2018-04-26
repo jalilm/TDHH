@@ -1,12 +1,12 @@
-#if !defined(HYPERLOGLOG_HPP)
-#define HYPERLOGLOG_HPP
-
 /**
  * @file hyperloglog.hpp
  * @brief HyperLogLog cardinality estimator
  * @date Created 2013/3/20
  * @author Hideaki Ohno
  */
+
+#if !defined(HYPERLOGLOG_HPP)
+#define HYPERLOGLOG_HPP
 
 #include <vector>
 #include <cmath>
@@ -15,43 +15,32 @@
 #include <algorithm>
 #include "MurmurHash3.hpp"
 #include <string>
+
 #define HLL_HASH_SEED 313
 
 #if defined(__has_builtin) && (defined(__GNUC__) || defined(__clang__))
 
-#define _GET_CLZ(x, b) (uint8_t)std::min(b, ::__builtin_clz(x)) + 1
+#define _GET_CLZ(x, b) ((uint8_t)std::min(b, ::__builtin_clz(x)) + 1)
 
 #else
 
 inline uint8_t _get_leading_zero_count(uint32_t x, uint8_t b) {
-
-#if defined (_MSC_VER)
-    uint32_t leading_zero_len = 32;
-    ::_BitScanReverse(&leading_zero_len, x);
-    --leading_zero_len;
-    return std::min(b, (uint8_t)leading_zero_len);
-#else
-    uint8_t v = 1;
-    while (v <= b && !(x & 0x80000000)) {
-        v++;
-        x <<= 1;
-    }
-    return v;
-#endif
-
-}
-
-inline uint8_t _get_trailing_zero_count(uint32_t x, uint8_t b) {
-    uint8_t v = 1;
-    while (x % 2 == 0) {
-        v++;
-        x >>= 1;
-    }
-    return v;
+    #if defined (_MSC_VER)
+        uint32_t leading_zero_len = 32;
+        ::_BitScanReverse(&leading_zero_len, x);
+        --leading_zero_len;
+        return std::min(b, (uint8_t)leading_zero_len);
+    #else
+        uint8_t v = 1;
+        while (v <= b && !(x & 0x80000000)) {
+            v++;
+            x <<= 1;
+        }
+        return v;
+    #endif
 }
 
 #define _GET_CLZ(x, b) _get_leading_zero_count(x, b)
-#define _GET_NCLZ(x, b) _get_trailing_zero_count(x, b)
 #endif /* defined(__GNUC__) */
 
 namespace hll {
@@ -63,6 +52,13 @@ namespace hll {
  *  @brief Implement of 'HyperLogLog' estimate cardinality algorithm
  */
     class HyperLogLog {
+    protected:
+        uint8_t b_; ///< register bit width
+        uint32_t m_; ///< register size
+        uint32_t seed;
+        double alphaMM_; ///< alpha * m^2
+        std::vector<uint8_t> M_; ///< registers
+
     public:
 
         /**
@@ -73,8 +69,8 @@ namespace hll {
          *
          * @exception std::invalid_argument the argument is out of range.
          */
-        HyperLogLog(uint8_t b = 4) throw(std::invalid_argument) :
-                b_(b), m_(1 << b), M_(m_, 0), seed(HLL_HASH_SEED) {
+        explicit HyperLogLog(uint8_t b = 4) noexcept(false) :
+                b_(b), m_(1u << b), M_(m_, 0), seed(HLL_HASH_SEED) {
 
             if (b < 4 || 30 < b) {
                 throw std::invalid_argument("bit width must be in the range [4,30]");
@@ -105,11 +101,11 @@ namespace hll {
          * @param[in] len length of string
          */
 
-        void set_seed(uint32_t s) {
+        virtual void set_seed(uint32_t s) {
             seed = s;
         }
 
-        void add(const char *str, int len) {
+        virtual void add(const char *str, int len) {
             uint32_t hash;
             MurmurHash3_x86_32((const void *) str, len, seed, (void *) &hash);
             uint32_t index = hash >> (32 - b_);
@@ -119,7 +115,7 @@ namespace hll {
             }
         }
 
-        void add_weighted(const char *str, int len, uint32_t weight) {
+        virtual void add_weighted(const char *str, int len, uint32_t weight) {
             for(int i =0 ; i < weight; ++i) {
                 std::string new_str(str);
                 new_str = new_str.append(".");
@@ -145,11 +141,11 @@ namespace hll {
          *
          * @return Estimated cardinality value.
          */
-        double estimate() const {
+        virtual double estimate() const {
             double estimate;
             double sum = 0.0;
             for (uint32_t i = 0; i < m_; i++) {
-                sum += 1.0 / (1 << M_[i]);
+                sum += 1.0 / (1u << M_[i]);
             }
             estimate = alphaMM_ / sum; // E in the original paper
             if (estimate <= 2.5 * m_) {
@@ -176,7 +172,7 @@ namespace hll {
          *
          * @exception std::invalid_argument number of registers doesn't match.
          */
-        void merge(const HyperLogLog &other) throw(std::invalid_argument) {
+        virtual void merge(const HyperLogLog &other) noexcept(false) {
             if (m_ != other.m_) {
                 std::stringstream ss;
                 ss << "number of registers doesn't match: " << m_ << " != " << other.m_;
@@ -192,7 +188,7 @@ namespace hll {
         /**
          * Clears all internal registers.
          */
-        void clear() {
+        virtual void clear() {
             std::fill(M_.begin(), M_.end(), 0);
         }
 
@@ -201,7 +197,7 @@ namespace hll {
          *
          * @return Register size
          */
-        uint32_t registerSize() const {
+        virtual uint32_t registerSize() const {
             return m_;
         }
 
@@ -210,7 +206,7 @@ namespace hll {
          *
          * @param[in,out] rhs Another HyperLogLog instance
          */
-        void swap(HyperLogLog &rhs) {
+        virtual void swap(HyperLogLog &rhs) {
             std::swap(b_, rhs.b_);
             std::swap(m_, rhs.m_);
             std::swap(alphaMM_, rhs.alphaMM_);
@@ -224,7 +220,7 @@ namespace hll {
          *
          * @exception std::runtime_error When failed to dump.
          */
-        void dump(std::ostream &os) const throw(std::runtime_error) {
+        virtual void dump(std::ostream &os) const noexcept(false) {
             os.write((char *) &b_, sizeof(b_));
             os.write((char *) &M_[0], sizeof(M_[0]) * M_.size());
             if (os.fail()) {
@@ -239,7 +235,7 @@ namespace hll {
          *
          * @exception std::runtime_error When failed to restore.
          */
-        void restore(std::istream &is) throw(std::runtime_error) {
+        virtual void restore(std::istream &is) noexcept(false) {
             uint8_t b = 0;
             is.read((char *) &b, sizeof(b));
             HyperLogLog tempHLL(b);
@@ -250,165 +246,7 @@ namespace hll {
             swap(tempHLL);
         }
 
-    protected:
-        uint8_t b_; ///< register bit width
-        uint32_t m_; ///< register size
-        uint32_t seed;
-        double alphaMM_; ///< alpha * m^2
-        std::vector<uint8_t> M_; ///< registers
     };
-
-/**
- * @brief HIP estimator on HyperLogLog counter.
- */
-    class HyperLogLogHIP : public HyperLogLog {
-    public:
-
-        /**
-         * Constructor
-         *
-         * @param[in] b bit width (register size will be 2 to the b power).
-         *            This value must be in the range[4,30].Default value is 4.
-         *
-         * @exception std::invalid_argument the argument is out of range.
-         */
-        HyperLogLogHIP(uint8_t b = 4) throw(std::invalid_argument) : HyperLogLog(b), register_limit_((1 << 5) - 1),
-                                                                     c_(0.0), p_(1 << b) {
-        }
-
-        /**
-         * Adds element to the estimator
-         *
-         * @param[in] str string to add
-         * @param[in] len length of string
-         */
-        void add(const char *str, uint32_t len) {
-            uint32_t hash;
-            MurmurHash3_x86_32(str, len, seed, (void *) &hash);
-            uint32_t index = hash >> (32 - b_);
-            uint8_t rank = _GET_CLZ((hash << b_), 32 - b_);
-            rank = rank == 0 ? register_limit_ : std::min(register_limit_, rank);
-            const uint8_t old = M_[index];
-            if (rank > old) {
-                c_ += 1.0 / (p_ / m_);
-                p_ -= 1.0 / (1 << old);
-                M_[index] = rank;
-                if (rank < 31) {
-                    p_ += 1.0 / (uint32_t(1) << rank);
-                }
-            }
-        }
-
-        /**
-         * Estimates cardinality value.
-         *
-         * @return Estimated cardinality value.
-         */
-        double estimate() const {
-            return c_;
-        }
-
-        /**
-         * Merges the estimate from 'other' into this object, returning the estimate of their union.
-         * The number of registers in each must be the same.
-         *
-         * @param[in] other HyperLogLog instance to be merged
-         *
-         * @exception std::invalid_argument number of registers doesn't match.
-         */
-        void merge(const HyperLogLogHIP &other) throw(std::invalid_argument) {
-            if (m_ != other.m_) {
-                std::stringstream ss;
-                ss << "number of registers doesn't match: " << m_ << " != " << other.m_;
-                throw std::invalid_argument(ss.str().c_str());
-            }
-            for (uint32_t r = 0; r < m_; ++r) {
-                const uint8_t b = M_[r];
-                const uint8_t b_other = other.M_[r];
-                if (b < b_other) {
-                    c_ += 1.0 / (p_ / m_);
-                    p_ -= 1.0 / (1 << b);
-                    M_[r] |= b_other;
-                    if (b_other < register_limit_) {
-                        p_ += 1.0 / (1 << b_other);
-                    }
-                }
-            }
-        }
-
-        /**
-         * Clears all internal registers.
-         */
-        void clear() {
-            std::fill(M_.begin(), M_.end(), 0);
-            c_ = 0.0;
-            p_ = 1 << b_;
-        }
-
-        /**
-         * Returns size of register.
-         *
-         * @return Register size
-         */
-        uint32_t registerSize() const {
-            return m_;
-        }
-
-        /**
-         * Exchanges the content of the instance
-         *
-         * @param[in,out] rhs Another HyperLogLog instance
-         */
-        void swap(HyperLogLogHIP &rhs) {
-            std::swap(b_, rhs.b_);
-            std::swap(m_, rhs.m_);
-            std::swap(c_, rhs.c_);
-            M_.swap(rhs.M_);
-        }
-
-        /**
-         * Dump the current status to a stream
-         *
-         * @param[out] os The output stream where the data is saved
-         *
-         * @exception std::runtime_error When failed to dump.
-         */
-        void dump(std::ostream &os) const throw(std::runtime_error) {
-            os.write((char *) &b_, sizeof(b_));
-            os.write((char *) &M_[0], sizeof(M_[0]) * M_.size());
-            os.write((char *) &c_, sizeof(c_));
-            os.write((char *) &p_, sizeof(p_));
-            if (os.fail()) {
-                throw std::runtime_error("Failed to dump");
-            }
-        }
-
-        /**
-         * Restore the status from a stream
-         *
-         * @param[in] is The input stream where the status is saved
-         *
-         * @exception std::runtime_error When failed to restore.
-         */
-        void restore(std::istream &is) throw(std::runtime_error) {
-            uint8_t b = 0;
-            is.read((char *) &b, sizeof(b));
-            HyperLogLogHIP tempHLL(b);
-            is.read((char *) &(tempHLL.M_[0]), sizeof(M_[0]) * tempHLL.m_);
-            is.read((char *) &(tempHLL.c_), sizeof(double));
-            is.read((char *) &(tempHLL.p_), sizeof(double));
-            if (is.fail()) {
-                throw std::runtime_error("Failed to restore");
-            }
-            swap(tempHLL);
-        }
-
-    private:
-        const uint8_t register_limit_;
-        double c_;
-        double p_;
-    };
-
 } // namespace hll
 
 #endif // !defined(HYPERLOGLOG_HPP)

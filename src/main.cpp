@@ -63,7 +63,7 @@ void MEAN(t1 real_result, const vector<t1> &observations, t1 (*func)(t1, t1), bo
     }
 }
 
-vector<double> vol_est(vector<int> counters, string filename, bool print=false) {
+vector<double> vol_est(vector<int> counters, const string &filename, bool print=false) {
     vector<double> estimations;
     Router router(filename);
     vector<map<int, double> > result;
@@ -86,15 +86,16 @@ vector<map<string,double> > dist_sample(double eps, double delta, const char* fi
     vector<map<string,double> > samples;
     Router router(filename);
     for (int i = 0; i < ITERATIONS1; ++i) {
-        QMax qmax = router.sample(eps, delta);
-        const auto &v = qmax.getSample();
+        QMax * qmax = router.sample(eps, delta);
+        const auto &v = qmax->GetSample();
+        delete qmax;
         samples.push_back(v);
         router.reset();
     }
     return samples;
 }
 
-void freq_est(vector<pair<double,double>> params, string filename, string resfile) {
+void freq_est(vector<pair<double,double>> params, const string &filename, const string &resfile) {
     Router r(filename);
     const auto & fe = r.freq_est(params);
 
@@ -152,7 +153,8 @@ void freq_est(vector<pair<double,double>> params, string filename, string resfil
     }
 }
 
-void heavy_hitter(vector<pair<double, double>> params, double theta, string filename, string resDirectory, string resfile) {
+void heavy_hitter(vector<pair<double, double>> params, double theta, const string &filename, string resDirectory,
+                  const string &resfile) {
     Router router(filename);
     map<pair<double,double>, vector<string>> params_to_THH;
     map<pair<double,double>, vector<string>> params_to_miceFlows;
@@ -225,7 +227,7 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, string file
         auto currTHH = params_to_THH.at(param);
         const auto &currMice = params_to_miceFlows.at(param);
         const auto &currOther = params_to_otherFlows.at(param);
-        unsigned int universe_size = currTHH.size() + currMice.size() + currOther.size();
+        unsigned long universe_size = currTHH.size() + currMice.size() + currOther.size();
         for (const auto &sample : samples.at(param)) {
             vector<string> HH;
             for (const auto &item : sample) {
@@ -255,7 +257,7 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, string file
 
 int main() {
     string test = "hh_";
-    string dataset = "univ1";
+    string dataset = "caida";
     string DATASET = dataset;
     boost::to_upper(DATASET);
 
@@ -268,7 +270,7 @@ int main() {
     ss >> filename;
 
     stringstream ss1;
-    ss1 <<  "../datasets_files/" << DATASET << "/" << dataset << "_flows_count-18000000.csv";
+    ss1 <<  "../datasets_files/" << DATASET << "/" << dataset << "_flows_count-31000000.csv";
     string resfile;
     ss1 >> resfile;
 
@@ -283,7 +285,7 @@ int main() {
         for(auto eps : epss) {
             for(int delta_pow = -2; delta_pow > -6; --delta_pow) {
                 double delta = pow(2, delta_pow);
-                params.push_back(pair<double, double >(eps, delta));
+                params.emplace_back(eps, delta);
             }
         }
         freq_est(params, filename, resfile);
@@ -295,7 +297,7 @@ int main() {
         for(auto eps : epss) {
             for(int delta_pow = -2; delta_pow > -6; --delta_pow) {
                 double delta = pow(2, delta_pow);
-                params.push_back(pair<double, double >(eps, delta));
+                params.emplace_back(eps, delta);
             }
         }
         heavy_hitter(params, theta, filename, "../datasets_files/" + DATASET + "/", resfile);

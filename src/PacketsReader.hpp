@@ -2,15 +2,15 @@
 // Created by jalilm on 22/03/2018.
 //
 
-#ifndef TDHH_PKTS_READER_HPP
-#define TDHH_PKTS_READER_HPP
+#ifndef TDHH_PACKETS_READER_HPP
+#define TDHH_PACKETS_READER_HPP
 
 #include <fstream>
 #include <string>
-#include "IPPacket.hpp"
+#include "Packet.hpp"
 #include "CSVIterator.hpp"
 #include <map>
-
+#include <utility>
 
 namespace TDHH {
 
@@ -36,7 +36,7 @@ namespace TDHH {
 
 
     public:
-        PacketsReader(string filename, Dataset dataset=CAIDA) : filename(filename), dataset(dataset), id(0) {
+        explicit PacketsReader(string filename, Dataset dataset=CAIDA) : filename(std::move(std::move(filename))), dataset(dataset), id(0) {
             infile = ifstream(this->filename);
             it = CSVIterator(infile);
         }
@@ -55,4 +55,4 @@ namespace TDHH {
     };
 }
 
-#endif //TDHH_PKTS_READER_HPP
+#endif //TDHH_PACKETS_READER_HPP
