@@ -1,7 +1,11 @@
 #include "PacketsReader.hpp"
 #include <random>
+#include <stdexcept>
+#include <fstream>
 #include "Hyperloglog.hpp"
 #include "Router.hpp"
+#include "Utils.hpp"
+#include "MathUtils.hpp"
 
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
@@ -14,92 +18,55 @@ using namespace TDHH;
 using namespace std;
 using namespace hll;
 
-const int ITERATIONS1 = 1;
+//const int ITERATIONS1 = 1;
 
-// Calculates the Square realative error of an observation.
-template <typename t1>
-t1 SRE(t1 real_result, t1 observation) {
-    return pow((observation - real_result) / (real_result), 2);
-}
-
-// Just Calculates the mean.
-template <typename t1>
-t1 just_mean(t1 real_result, t1 observation) {
-    return observation;
-}
-
-// Calculates the confidence interval of a vector of observations.
-template <typename t1>
-double CI(t1 mean, const vector<t1> & observations, double zvalue=1.96) {
-    double sum = 0;
-    for (auto obs : observations) {
-        sum += pow(obs-mean,2);
-    }
-    double std = sqrt(sum/double(observations.size()));
-    double sqr_size = sqrt(double(observations.size()));
-    return std/sqr_size * zvalue;
-}
-
-// Calculates the mean and the confidence interval of a vector of observations.
-template<typename t1>
-void MEAN(t1 real_result, const vector<t1> &observations, t1 (*func)(t1, t1), bool printNewLine = true, double zvalue = 1.96) {
-    vector<double> sums;
-    auto const &vi = observations[0];
-    double sum=0;
-    for (const auto &x : observations) {
-        double observation_effect = func(real_result, x);
-        sum += observation_effect;
-        sums.push_back(observation_effect);
-    }
-    double mean = sum / double(observations.size());
-    double ci = CI(mean, sums, zvalue);
-    double upper_limit = mean + ci;
-    double lower_limit =  mean - ci;
-    cout << real_result << "," << mean << "," << upper_limit << "," << lower_limit;
-    if(printNewLine) {
-        cout << endl;
-    } else {
-        cout << ",";
-    }
-}
-
-vector<double> vol_est(vector<int> counters, const string &filename, bool print=false) {
+vector<double> volume_estimation(vector<int> counters, ofstream & result_stream, const string &dataset_file, bool print, DATASET dataset) {
     vector<double> estimations;
-    Router router(filename);
+    Router router(dataset_file, dataset);
     vector<map<int, double> > result;
     const map<int, map<int,vector<double>>>& m = router.volumeEstimation(counters);
+//    for (const int & c : counters){
+//        const auto & pkts_to_estimation = m.at(c);
+//        for(const auto & item: pkts_to_estimation) {
+//            double num_pkts = item.first;
+//            const auto & estimations = item.second;
+//            if(print) {
+//                cout << c << ",";
+//                MEAN(num_pkts, estimations, SRE);
+//            }
+//        }
+//    }
     for (const int & c : counters){
         const auto & pkts_to_estimation = m.at(c);
         for(const auto & item: pkts_to_estimation) {
             double num_pkts = item.first;
-            const auto & estimations = item.second;
-            if(print) {
-                cout << c << ",";
-                MEAN(num_pkts, estimations, SRE);
+            const auto & pkt_estimations = item.second;
+            for(const auto & est: pkt_estimations) {
+                result_stream << c << "," << (int)num_pkts << "," << est << endl;
             }
         }
     }
     return estimations;
 }
 
-vector<map<string,double> > dist_sample(double eps, double delta, const char* filename) {
-    vector<map<string,double> > samples;
-    Router router(filename);
-    for (int i = 0; i < ITERATIONS1; ++i) {
-        QMax * qmax = router.sample(eps, delta);
-        const auto &v = qmax->GetSample();
-        delete qmax;
-        samples.push_back(v);
-        router.reset();
-    }
-    return samples;
-}
+//vector<map<string,double> > dist_sample(double eps, double delta, const char* filename) {
+//    vector<map<string,double> > samples;
+//    Router router(filename);
+//    for (int i = 0; i < ITERATIONS1; ++i) {
+//        QMax * qmax = router.sample(eps, delta);
+//        const auto &v = qmax->GetSample();
+//        delete qmax;
+//        samples.push_back(v);
+//        router.reset();
+//    }
+//    return samples;
+//}
 
-void freq_est(vector<pair<double,double>> params, const string &filename, const string &resfile) {
-    Router r(filename);
-    const auto & fe = r.freq_est(params);
-
-    std::ifstream is(resfile);
+void frequency_estimation(vector<pair<double, double>> params, ofstream& result_stream, const string &dataset_file, const string &real_freq_file, DATASET dataset) {
+    Router r(dataset_file, dataset);
+    const auto & fe = r.frequencyEstimation(params);
+    cout << "Got FE results" << endl;
+    ifstream is(real_freq_file);
     double S;
     is >> S;
 
@@ -112,6 +79,7 @@ void freq_est(vector<pair<double,double>> params, const string &filename, const 
             square_sum_per_param[param].push_back(0.0);
         }
     }
+    cout << "Finished preparing morethans and ss" << endl;
 
     double number_of_flows = 0;
     while(is.good()) {
@@ -121,10 +89,12 @@ void freq_est(vector<pair<double,double>> params, const string &filename, const 
         is >> flow;
         ++number_of_flows;
         for (const auto & param : params) {
+            std::clock_t start;
+            start = std::clock();
             double eps = param.first;
-            vector<map<string, double>> estimations_per_param = fe.at(param);
+            const vector<map<string, double>>& estimations_per_param = fe.at(param);
             for (int k = 0; k < estimations_per_param.size(); k++) {
-                const auto & estimation = estimations_per_param[k];
+                const map<string, double> & estimation = estimations_per_param[k];
                 double est_freq = 0;
                 const auto & iter = estimation.find(flow);
                 if (iter != estimation.end()) {
@@ -136,26 +106,41 @@ void freq_est(vector<pair<double,double>> params, const string &filename, const 
                 }
                 square_sum_per_param[param][k] += pow(diff,2);
             }
+            double duration = (std::clock() - start) / (double) CLOCKS_PER_SEC;
+            cout << "took:" << duration << "[s]" << endl;
+        }
+        if (int(number_of_flows) % 1000 == 0) {
+            cout << "Finished reading freq of " << number_of_flows << endl;
         }
     }
+    cout << "Before reporting results" << endl;
+
     for (const auto & param : params) {
         double eps = param.first;
         double delta = param.second;
-        cout << eps << "," << delta << ",";
-        vector<double> WEPs;
-        vector<double> rmses;
         for (int k = 0; k < morethans_per_param[param].size(); k++) {
-            WEPs.push_back(morethans_per_param[param][k]/number_of_flows);
-            rmses.push_back(sqrt(square_sum_per_param[param][k]/number_of_flows));
+            result_stream << eps << "," << delta << "," << morethans_per_param[param][k] << "," << square_sum_per_param[param][k] << "," << number_of_flows << endl;
         }
-        MEAN(0.0, WEPs, just_mean, false);
-        MEAN(0.0, rmses, just_mean, true);
     }
+    cout << "Done." << endl;
+//        for (const auto & param : params) {
+//        double eps = param.first;
+//        double delta = param.second;
+//        result_file << eps << "," << delta << ",";
+//        vector<double> WEPs;
+//        vector<double> rmses;
+//        for (int k = 0; k < morethans_per_param[param].size(); k++) {
+//            WEPs.push_back(morethans_per_param[param][k]/number_of_flows);
+//            rmses.push_back(sqrt(morethans_per_param[param][k]/number_of_flows));
+//        }
+//        MEAN(0.0, WEPs, just_mean, false);
+//        MEAN(0.0, rmses, just_mean, true);
+//    }
 }
 
 void heavy_hitter(vector<pair<double, double>> params, double theta, const string &filename, string resDirectory,
-                  const string &resfile) {
-    Router router(filename);
+                  const string &resfile, DATASET dataset) {
+    Router router(filename, dataset);
     map<pair<double,double>, vector<string>> params_to_THH;
     map<pair<double,double>, vector<string>> params_to_miceFlows;
     map<pair<double,double>, vector<string>> params_to_otherFlows;
@@ -163,9 +148,9 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
     for(const auto & param : params){
         double eps = param.first;
         double delta = param.second;
-        std::ifstream ifsHH(resDirectory+std::to_string(theta)+string("-")+std::to_string(eps)+"THH.ser");
-        std::ifstream ifsMice(resDirectory+std::to_string(theta)+string("-")+std::to_string(eps)+"mice.ser");
-        std::ifstream ifsOther(resDirectory+std::to_string(theta)+string("-")+std::to_string(eps)+"other.ser");
+        ifstream ifsHH(resDirectory+to_string(theta)+string("-")+to_string(eps)+"THH.ser");
+        ifstream ifsMice(resDirectory+to_string(theta)+string("-")+to_string(eps)+"mice.ser");
+        ifstream ifsOther(resDirectory+to_string(theta)+string("-")+to_string(eps)+"other.ser");
         if (ifsHH.fail() || ifsMice.fail() || ifsOther.fail()){
             namespace fs = boost::filesystem;
             fs::path someDir(resDirectory);
@@ -177,7 +162,7 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
                         vector<string> THH;
                         vector<string> miceFlows;
                         vector<string> otherFlows;
-                        std::ifstream is(rs);
+                        ifstream is(rs);
                         double S;
                         is >> S;
                         while (is.good()) {
@@ -199,13 +184,13 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
                     }
                 }
             }
-            std::ofstream ofsHH(resDirectory+std::to_string(theta)+string("-")+std::to_string(eps)+"THH.ser");
+            ofstream ofsHH(resDirectory+to_string(theta)+string("-")+to_string(eps)+"THH.ser");
             boost::archive::text_oarchive oa(ofsHH);
             oa << params_to_THH[param];
-            std::ofstream ofsMice(resDirectory+std::to_string(theta)+string("-")+std::to_string(eps)+"mice.ser");
+            ofstream ofsMice(resDirectory+to_string(theta)+string("-")+to_string(eps)+"mice.ser");
             boost::archive::text_oarchive ob(ofsMice);
             ob << params_to_miceFlows[param];
-            std::ofstream ofsOther(resDirectory+std::to_string(theta)+string("-")+std::to_string(eps)+"other.ser");
+            ofstream ofsOther(resDirectory+to_string(theta)+string("-")+to_string(eps)+"other.ser");
             boost::archive::text_oarchive oc(ofsOther);
             oc << params_to_otherFlows[param];
         } else {
@@ -237,14 +222,14 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
                     HH.push_back(item.first);
                 }
             }
-            std::sort(HH.begin(), HH.end());
-            std::sort(currTHH.begin(), currTHH.end());
-            std::vector<string> difference;
-            std::set_difference(HH.begin(), HH.end(), currTHH.begin(), currTHH.end(), std::back_inserter(difference));
+            sort(HH.begin(), HH.end());
+            sort(currTHH.begin(), currTHH.end());
+            vector<string> difference;
+            set_difference(HH.begin(), HH.end(), currTHH.begin(), currTHH.end(), back_inserter(difference));
             double FPR = double(difference.size()) / double(universe_size - currTHH.size());
             FPRs.push_back(FPR);
-            std::vector<string> difference1;
-            std::set_difference(currTHH.begin(), currTHH.end(), HH.begin(), HH.end(), std::back_inserter(difference1));
+            vector<string> difference1;
+            set_difference(currTHH.begin(), currTHH.end(), HH.begin(), HH.end(), back_inserter(difference1));
             double FNR = double(difference1.size()) / double(currTHH.size());
             FNRs.push_back(FNR);
         }
@@ -254,56 +239,86 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
     }
 }
 
+int main(int argc, char **argv) {
+    if(argc < 3) {
+        throw invalid_argument("Please provide test (VE, FE, HH, WVE, WFE, WHH) and dataset (CAIDA, CAIDA18, UCLA, UCLA_FULL, UNIV1, UINV2).");
+    }
+    const TEST t = testEnum(argv[1]);
+    const DATASET d = datasetEnum(argv[2]);
+    const string results_path = "../results/";
+    const string results_suffix = ".raw_res";
+    const string datasets_path = "../datasets_files/";
+    const string datasets_suffix = ".csv";
 
-int main() {
-    string test = "hh_";
-    string dataset = "caida";
+    const string test = testName(t);
+    const string dataset = datasetName(d);
     string DATASET = dataset;
     boost::to_upper(DATASET);
 
-    std::streambuf *coutbuf = std::cout.rdbuf();
-    std::ofstream out("../results/" + test + dataset + ".res");
-    std::cout.rdbuf(out.rdbuf());
-    stringstream ss ;
-    ss <<  "../datasets_files/" << DATASET << "/" << dataset << ".csv";
-    string filename;
-    ss >> filename;
+    const string dataset_file = datasets_path + DATASET + "/" + dataset + datasets_suffix;
+    const string result_file = results_path + test + "_" + dataset + results_suffix;
+    const string real_freq_file = datasets_path + DATASET + "/" + dataset + "_flows_count-" + getFreqLimit(d) + datasets_suffix;
 
-    stringstream ss1;
-    ss1 <<  "../datasets_files/" << DATASET << "/" << dataset << "_flows_count-31000000.csv";
-    string resfile;
-    ss1 >> resfile;
+    bool addCSVHeader = false;
+    ifstream check_result_stream;
+    check_result_stream.open(result_file, fstream::in | fstream::out | fstream::app);
+    if(!check_result_stream) {
+        throw invalid_argument("Could not open " + result_file + " for reading.");
+    }
+    if(check_result_stream.peek() == EOF) {
+        addCSVHeader = true;
+    }
+    check_result_stream.close();
 
-    if (boost::starts_with(test, "ve")) {
-        cout << "counters,pkts,msre,upper_ci,lower_ci" << endl;
-        vector<int> counters = {128, 512, 1024};
-        vol_est(counters, filename, true);
-    } else if (boost::starts_with(test, "fe")) {
-        cout << "eps,delta,dummy_wep,wep,wep_upper_ci,wep_lower_ci,dummy_rmse,rmse,rmse_upper_ci,rmse_lower_ci" << endl;
-        vector<pair<double, double>> params;
-        double epss[] = {0.1, 0.05, 0.01, 0.005};
-        for(auto eps : epss) {
-            for(int delta_pow = -2; delta_pow > -6; --delta_pow) {
-                double delta = pow(2, delta_pow);
-                params.emplace_back(eps, delta);
-            }
-        }
-        freq_est(params, filename, resfile);
-    } else if (boost::starts_with(test, "hh")) {
-        cout << "eps,delta,theta,FPR,FPR_upper_ci,FPR_lower_ci,FNR,FNR_upper_ci,FNR_lower_ci" << endl;
-        double theta = 0.01;
-        vector<pair<double, double>> params;
-        double epss[] = {0.005};
-        for(auto eps : epss) {
-            for(int delta_pow = -2; delta_pow > -6; --delta_pow) {
-                double delta = pow(2, delta_pow);
-                params.emplace_back(eps, delta);
-            }
-        }
-        heavy_hitter(params, theta, filename, "../datasets_files/" + DATASET + "/", resfile);
+    ofstream result_stream;
+    result_stream.open(result_file, fstream::in | fstream::out | fstream::app);
+    if(!result_stream) {
+        throw invalid_argument("Could not open " + result_file + " for writing.");
     }
 
-    std::cout.rdbuf(coutbuf);
+    switch(t) {
+        case TEST::VE: {
+            if(addCSVHeader) {
+                result_stream << "counters,packets,estimation" << endl;
+            }
+            vector<int> counters = {128, 512, 1024};
+            volume_estimation(counters, result_stream, dataset_file, true, d);
+        }
+        break;
+        case TEST::FE: {
+            if (addCSVHeader) {
+                result_stream << "eps,delta,more_than,square_sum,number_of_flows" << endl;
+            }
+            vector<pair<double, double>> params;
+            double epss[] = {0.1, 0.05, 0.01, 0.005};
+            for(auto eps : epss) {
+                for(int delta_pow = -2; delta_pow > -6; --delta_pow) {
+                    double delta = pow(2, delta_pow);
+                    params.emplace_back(eps, delta);
+                }
+            }
+            frequency_estimation(params, result_stream, dataset_file, real_freq_file, d);
+        }
+        break;
+        case TEST::HH: {
+            if(addCSVHeader) {
+                result_stream << "eps,delta,theta,FPR,FPR_upper_ci,FPR_lower_ci,FNR,FNR_upper_ci,FNR_lower_ci" << endl;
+            }
+            double theta = 0.01;
+            vector<pair<double, double>> params;
+            double epss[] = {0.005};
+            for(auto eps : epss) {
+                for(int delta_pow = -2; delta_pow > -6; --delta_pow) {
+                    double delta = pow(2, delta_pow);
+                    params.emplace_back(eps, delta);
+                }
+            }
+            heavy_hitter(params, theta, dataset_file, "../datasets_files/" + DATASET + "/", result_file, d);
+        }
+        break;
+    }
+
+    result_stream.close();
     return 0;
 }
 
@@ -312,9 +327,9 @@ int main() {
 //    double delta = 0.1;
 //    double theta = 0.01;
 //    vector<int> counters = {128, 512, 1024};
-//    std::streambuf *coutbuf = std::cout.rdbuf();
-//    std::ofstream out("../results/WVE_caida_O(W)");
-//    std::cout.rdbuf(out.rdbuf());
+//    streambuf *coutbuf = cout.rdbuf();
+//    ofstream out("../results/WVE_caida_O(W)");
+//    cout.rdbuf(out.rdbuf());
 //    weighted_vol_est(counters, "../datasets_files/CAIDA16/caida.csv");
     //cout << "eps,delta,ucla-wep,ucla-rmse,caida-wep,caida-rmse" << endl;
     //for(int delta_pow = -2; delta_pow > -11; --delta_pow) {
@@ -322,14 +337,14 @@ int main() {
         //delta = pow(2, delta_pow);
 //        delta = 0.05;
 //        cout << eps << "," << delta << ",";// << theta << ",";
-//        freq_est(eps,delta,"../datasets_files/UCLA/UCLA.csv","../datasets_files/UCLA/ucla_flows_count-8000000.csv");
-//        freq_est(eps,delta,"../datasets_files/CAIDA16/caida.csv","../datasets_files/CAIDA16/caida_flows_count-31000000.csv");
+//        frequency_estimation(eps,delta,"../datasets_files/UCLA/UCLA.csv","../datasets_files/UCLA/ucla_flows_count-8000000.csv");
+//        frequency_estimation(eps,delta,"../datasets_files/CAIDA16/caida.csv","../datasets_files/CAIDA16/caida_flows_count-31000000.csv");
 //        heavy_hitter(eps, delta, theta, "../datasets_files/UCLA/UCLA.csv", "../datasets_files/UCLA/", "ucla_flows_count-8000000");
 //        cout << endl;
 //
 //    }
-//    std::cout.rdbuf(coutbuf); //reset to standard output again
+//    cout.rdbuf(coutbuf); //reset to standard output again
 //    return 0;
 //}
-//vol_est(0.05,1,"../datasets_files/UCLA/lasr.cs.ucla.edu/ddos/traces/public/trace5/UCLA5.csv");
+//volume_estimation(0.05,1,"../datasets_files/UCLA/lasr.cs.ucla.edu/ddos/traces/public/trace5/UCLA5.csv");
 //heavy_hitter(0.1, 0.05, 0.001,"../datasets_files/CAIDA16/caida.csv", "../datasets_files/CAIDA16/" ,"caida_flows_count-");

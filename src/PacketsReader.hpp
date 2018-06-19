@@ -11,6 +11,7 @@
 #include "CSVIterator.hpp"
 #include <map>
 #include <utility>
+#include "Utils.hpp"
 
 namespace TDHH {
 
@@ -19,24 +20,28 @@ namespace TDHH {
 
     class PacketsReader {
 
-    public:
-        enum Dataset {CAIDA, UCLA, UNIV};
-
     private:
-        Dataset dataset;
+        DATASET dataset;
         string filename;
         ifstream infile;
         CSVIterator it;
         unsigned long long int id;
+        unsigned long long int length;
+        string proto;
+        string IP_SRC;
+        string IP_DST;
+        string PORT_SRC;
+        string PORT_DST;
 
-        map<string, string> getNextUCLAPacket(const CSVIterator& it);
-        map<string, string> getNextCAIDAPacket(const CSVIterator& it);
-        map<string, string> getNextUNIVPacket(const CSVIterator& it);
-        map<string, string> getNextPacket(const CSVIterator& it);
+        void getNextUCLAPacket(const CSVIterator& it);
+        void getNextCAIDAPacket(const CSVIterator& it);
+        void getNextCAIDA18Packet(const CSVIterator& it);
+        void getNextUNIVPacket(const CSVIterator& it);
+        void getNextPacket(const CSVIterator& it);
 
 
     public:
-        explicit PacketsReader(string filename, Dataset dataset=CAIDA) : filename(std::move(std::move(filename))), dataset(dataset), id(0) {
+        explicit PacketsReader(string filename, DATASET dataset) : filename(std::move(std::move(filename))), dataset(dataset), id(0), length(0), proto(""), IP_SRC(""), IP_DST(""), PORT_SRC(""), PORT_DST("") {
             infile = ifstream(this->filename);
             it = CSVIterator(infile);
         }
@@ -49,9 +54,9 @@ namespace TDHH {
 
         IPPacket *getNextIPPacket();
 
-        WeightedIPPacket *getNextWeightedIPPacket();
-
-        TransportPacket *getNextTransportPacket();
+//        WeightedIPPacket *getNextWeightedIPPacket();
+//
+//        TransportPacket *getNextTransportPacket();
     };
 }
 

@@ -14,12 +14,13 @@
 #include <boost/functional/hash.hpp>
 #include <boost/math/special_functions/beta.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include "Utils.hpp"
 
 namespace TDHH {
     using namespace std;
     using namespace hll;
 
-    const int ITERATIONS = 10;
+    const int ITERATIONS = 1;
 
     class Router {
 
@@ -39,16 +40,17 @@ namespace TDHH {
             return string_hash(s);
         }
 
+        DATASET dataset;
+
     protected:
         string filename;
         PacketsReader pr;
 
     public:
-        explicit Router(const string &filename) :
+        explicit Router(const string &filename, DATASET dataset) :
         filename(filename),
-        pr(filename, boost::starts_with(filename, "../datasets_files/UCLA")? PacketsReader::UCLA :
-                     boost::starts_with(filename, "../datasets_files/CAIDA")? PacketsReader::CAIDA :
-                     PacketsReader::UNIV)
+        pr(filename, dataset),
+        dataset(dataset)
         {}
 
         void reset() {
@@ -67,7 +69,7 @@ namespace TDHH {
                     hll.set_seed(rd());
                     hll_arr.push_back(hll);
                 }
-                counter_to_hll_arr.insert(pair<int, vector<HyperLogLog>>(c,hll_arr));
+                counter_to_hll_arr.insert(pair<int, vector<HyperLogLog>>(c, hll_arr));
             }
             auto pkt = pr.getNextIPPacket();
             int num_pkts = 0;
@@ -230,7 +232,19 @@ namespace TDHH {
 //            return weighted_sample(eps, delta, false);
 //        }
 
-        map<pair<double,double>, vector<map<string, double>>> freq_est(vector<pair<double,double>> params) {
+        int doNothing() {
+            auto pkt = pr.getNextIPPacket();
+            int num_pkts = 0;
+            while (pkt != nullptr) {
+                ++num_pkts;
+                const auto& pkt_string = pkt->getReprString();
+                delete pkt;
+                pkt = pr.getNextIPPacket();
+            }
+            return num_pkts;
+        }
+
+        map<pair<double,double>, vector<map<string, double>>> frequencyEstimation(vector<pair<double, double>> params) {
             map<pair<double,double>, vector<map<string, double>>> res;
             std::random_device rd;
 
@@ -262,10 +276,17 @@ namespace TDHH {
                 param_to_qmax_arr.insert(pair<pair<double, double>, vector<QMax*>>(param,qmax_arr));
             }
 
-            auto pkt = pr.getNextIPPacket();
             int num_pkts = 0;
+            std::clock_t start;
+            start = std::clock();
+            double duration = (std::clock() - start) / (double) CLOCKS_PER_SEC;
+            cout << "pkts:" << num_pkts << " duration:" << duration << "[s]" << endl;
+            auto pkt = pr.getNextIPPacket();
             while (pkt != nullptr) {
                 ++num_pkts;
+                if(num_pkts > stoi(getFreqLimit(dataset))) {
+                    break;
+                }
                 const auto& pkt_string = pkt->getReprString();
                 for (const auto & param : params) {
                     for (auto & hll : param_to_hll_arr.at(param)) {
@@ -276,39 +297,53 @@ namespace TDHH {
                     }
                 }
                 delete pkt;
+                if(num_pkts % 1000000 == 0) {
+                    duration = (std::clock() - start) / (double) CLOCKS_PER_SEC;
+                    cout << "pkts:" << num_pkts << " duration:" << duration << "[s]" << endl;
+                }
                 pkt = pr.getNextIPPacket();
             }
             for (const auto & param : params) {
                 double eps = param.first;
                 double delta = param.second;
                 double chi = ceil(3.0 / (eps/2 * eps/2) * log2(2.0 / delta/2));
+                cout << eps << " " << delta << " " << chi << endl;
 
                 vector<double> Ps;
                 vector<map<string, double>> samples;
 
                 for (auto & hll : param_to_hll_arr.at(param)) {
+                    double d = hll.estimate();
+                    cout << "hll.estimate:" << d << endl;
                     Ps.push_back(chi/hll.estimate());
                 }
                 for (auto & qmax : param_to_qmax_arr.at(param)) {
-                    samples.push_back(qmax->GetSample());
+                    const auto & s = qmax->GetSample();
+                    samples.push_back(s);
                 }
 
                 for (int k = 0; k < samples.size(); ++k) {
                     auto & sample = samples[k];
                     auto p = Ps[k];
+                    cout << "p:" << p << endl;
                     for(const auto & s : sample) {
+                        cout << "flow:" << s.first << endl;
+                        cout << "sam_freq:" << s.second << endl;
                         double est_freq = s.second/p;
                         sample[s.first] = est_freq;
+                        cout << "est_freq:" << est_freq << endl;
                     }
                     res[param] = samples;
                 }
             }
+            cout << "Finished preparing samples" << endl;
 
             for (const auto & param : params) {
                 for (auto & qmax : param_to_qmax_arr.at(param)) {
                     delete qmax;
                 }
             }
+            cout << "Finished deleting QMaxs" << endl;
 
             return res;
         }

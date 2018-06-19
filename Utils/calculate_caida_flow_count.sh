@@ -1,9 +1,9 @@
 #!/bin/bash
 
-TRACE_FILE="caida.csv"
-DIR="../datasets_files/CAIDA/"
-RES_PREFIX="caida_flows_count"
-TOTAL_FILE="caida_total_flows"
+TRACE_FILE="caida18.csv"
+DIR="../datasets_files/CAIDA18/"
+RES_PREFIX="caida18_flows_count"
+TOTAL_FILE="caida18_total_flows"
 STEP=1000000
 
 count=0
