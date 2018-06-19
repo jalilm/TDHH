@@ -18,24 +18,11 @@ using namespace TDHH;
 using namespace std;
 using namespace hll;
 
-//const int ITERATIONS1 = 1;
-
-vector<double> volume_estimation(vector<int> counters, ofstream & result_stream, const string &dataset_file, bool print, DATASET dataset) {
+vector<double> volume_estimation(vector<int> counters, ofstream & result_stream, const string &dataset_file, DATASET dataset) {
     vector<double> estimations;
     Router router(dataset_file, dataset);
     vector<map<int, double> > result;
     const map<int, map<int,vector<double>>>& m = router.volumeEstimation(counters);
-//    for (const int & c : counters){
-//        const auto & pkts_to_estimation = m.at(c);
-//        for(const auto & item: pkts_to_estimation) {
-//            double num_pkts = item.first;
-//            const auto & estimations = item.second;
-//            if(print) {
-//                cout << c << ",";
-//                MEAN(num_pkts, estimations, SRE);
-//            }
-//        }
-//    }
     for (const int & c : counters){
         const auto & pkts_to_estimation = m.at(c);
         for(const auto & item: pkts_to_estimation) {
@@ -48,19 +35,6 @@ vector<double> volume_estimation(vector<int> counters, ofstream & result_stream,
     }
     return estimations;
 }
-
-//vector<map<string,double> > dist_sample(double eps, double delta, const char* filename) {
-//    vector<map<string,double> > samples;
-//    Router router(filename);
-//    for (int i = 0; i < ITERATIONS1; ++i) {
-//        QMax * qmax = router.sample(eps, delta);
-//        const auto &v = qmax->GetSample();
-//        delete qmax;
-//        samples.push_back(v);
-//        router.reset();
-//    }
-//    return samples;
-//}
 
 void frequency_estimation(vector<pair<double, double>> params, ofstream& result_stream, const string &dataset_file, const string &real_freq_file, DATASET dataset) {
     Router r(dataset_file, dataset);
@@ -123,19 +97,6 @@ void frequency_estimation(vector<pair<double, double>> params, ofstream& result_
         }
     }
     cout << "Done." << endl;
-//        for (const auto & param : params) {
-//        double eps = param.first;
-//        double delta = param.second;
-//        result_file << eps << "," << delta << ",";
-//        vector<double> WEPs;
-//        vector<double> rmses;
-//        for (int k = 0; k < morethans_per_param[param].size(); k++) {
-//            WEPs.push_back(morethans_per_param[param][k]/number_of_flows);
-//            rmses.push_back(sqrt(morethans_per_param[param][k]/number_of_flows));
-//        }
-//        MEAN(0.0, WEPs, just_mean, false);
-//        MEAN(0.0, rmses, just_mean, true);
-//    }
 }
 
 void heavy_hitter(vector<pair<double, double>> params, double theta, const string &filename, string resDirectory,
@@ -241,7 +202,7 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
 
 int main(int argc, char **argv) {
     if(argc < 3) {
-        throw invalid_argument("Please provide test (VE, FE, HH, WVE, WFE, WHH) and dataset (CAIDA, UCLA, UCLA_FULL, UNIV1, UINV2).");
+        throw invalid_argument("Please provide test (VE, FE, HH) and dataset (CAIDA, UCLA, UCLA_FULL, UNIV1, UINV2, TEST).");
     }
     const TEST t = testEnum(argv[1]);
     const DATASET d = datasetEnum(argv[2]);
@@ -282,7 +243,7 @@ int main(int argc, char **argv) {
                 result_stream << "counters,packets,estimation" << endl;
             }
             vector<int> counters = {128, 512, 1024};
-            volume_estimation(counters, result_stream, dataset_file, true, d);
+            volume_estimation(counters, result_stream, dataset_file, d);
         }
         break;
         case TEST::FE: {
@@ -321,30 +282,3 @@ int main(int argc, char **argv) {
     result_stream.close();
     return 0;
 }
-
-//int main() {
-//    double epss[] = {0.01, 0.005, 0.001};
-//    double delta = 0.1;
-//    double theta = 0.01;
-//    vector<int> counters = {128, 512, 1024};
-//    streambuf *coutbuf = cout.rdbuf();
-//    ofstream out("../results/WVE_caida_O(W)");
-//    cout.rdbuf(out.rdbuf());
-//    weighted_vol_est(counters, "../datasets_files/CAIDA16/caida.csv");
-    //cout << "eps,delta,ucla-wep,ucla-rmse,caida-wep,caida-rmse" << endl;
-    //for(int delta_pow = -2; delta_pow > -11; --delta_pow) {
-//    for(auto eps : epss) {
-        //delta = pow(2, delta_pow);
-//        delta = 0.05;
-//        cout << eps << "," << delta << ",";// << theta << ",";
-//        frequency_estimation(eps,delta,"../datasets_files/UCLA/UCLA.csv","../datasets_files/UCLA/ucla_flows_count-8000000.csv");
-//        frequency_estimation(eps,delta,"../datasets_files/CAIDA16/caida.csv","../datasets_files/CAIDA16/caida_flows_count-31000000.csv");
-//        heavy_hitter(eps, delta, theta, "../datasets_files/UCLA/UCLA.csv", "../datasets_files/UCLA/", "ucla_flows_count-8000000");
-//        cout << endl;
-//
-//    }
-//    cout.rdbuf(coutbuf); //reset to standard output again
-//    return 0;
-//}
-//volume_estimation(0.05,1,"../datasets_files/UCLA/lasr.cs.ucla.edu/ddos/traces/public/trace5/UCLA5.csv");
-//heavy_hitter(0.1, 0.05, 0.001,"../datasets_files/CAIDA16/caida.csv", "../datasets_files/CAIDA16/" ,"caida_flows_count-");
