@@ -241,7 +241,7 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
 
 int main(int argc, char **argv) {
     if(argc < 3) {
-        throw invalid_argument("Please provide test (VE, FE, HH, WVE, WFE, WHH) and dataset (CAIDA, CAIDA18, UCLA, UCLA_FULL, UNIV1, UINV2).");
+        throw invalid_argument("Please provide test (VE, FE, HH, WVE, WFE, WHH) and dataset (CAIDA, UCLA, UCLA_FULL, UNIV1, UINV2).");
     }
     const TEST t = testEnum(argv[1]);
     const DATASET d = datasetEnum(argv[2]);
