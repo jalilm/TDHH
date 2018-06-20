@@ -58,6 +58,7 @@ namespace TDHH {
 
     public:
         explicit CSVIterator(std::istream &str) : m_str(str.good() ? &str : nullptr) { ++(*this); }
+
         CSVIterator() : m_str(nullptr) {}
 
         // Pre Increment

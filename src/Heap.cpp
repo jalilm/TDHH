@@ -49,7 +49,7 @@ std::map<string, double> Heap::GetSample() const {
     for (const auto &item : items) {
         string flow = item.GetPair().first;
         std::map<string, double>::iterator it(res.find(flow));
-        if (it != res.end()){
+        if (it != res.end()) {
             it->second++;
         } else {
             res[flow] = 1;

@@ -1,10 +1,7 @@
 #include "PacketsReader.hpp"
 #include <random>
-#include <stdexcept>
-#include <fstream>
 #include "Hyperloglog.hpp"
 #include "Router.hpp"
-#include "Utils.hpp"
 #include "MathUtils.hpp"
 
 #include <boost/archive/text_iarchive.hpp>
@@ -18,36 +15,38 @@ using namespace TDHH;
 using namespace std;
 using namespace hll;
 
-vector<double> volume_estimation(vector<int> counters, ofstream & result_stream, const string &dataset_file, DATASET dataset) {
+vector<double>
+volume_estimation(vector<int> counters, ofstream &result_stream, const string &dataset_file, DATASET dataset) {
     vector<double> estimations;
     Router router(dataset_file, dataset);
     vector<map<int, double> > result;
-    const map<int, map<int,vector<double>>>& m = router.volumeEstimation(counters);
-    for (const int & c : counters){
-        const auto & pkts_to_estimation = m.at(c);
-        for(const auto & item: pkts_to_estimation) {
+    const map<int, map<int, vector<double>>> &m = router.volumeEstimation(counters);
+    for (const int &c : counters) {
+        const auto &pkts_to_estimation = m.at(c);
+        for (const auto &item: pkts_to_estimation) {
             double num_pkts = item.first;
-            const auto & pkt_estimations = item.second;
-            for(const auto & est: pkt_estimations) {
-                result_stream << c << "," << (int)num_pkts << "," << est << endl;
+            const auto &pkt_estimations = item.second;
+            for (const auto &est: pkt_estimations) {
+                result_stream << c << "," << (int) num_pkts << "," << est << endl;
             }
         }
     }
     return estimations;
 }
 
-void frequency_estimation(vector<pair<double, double>> params, ofstream& result_stream, const string &dataset_file, const string &real_frequencies_file, DATASET dataset) {
+void frequency_estimation(vector<pair<double, double>> params, ofstream &result_stream, const string &dataset_file,
+                          const string &real_frequencies_file, DATASET dataset) {
     Router r(dataset_file, dataset);
-    const auto & fe = r.frequencyEstimation(params);
+    const auto &fe = r.frequencyEstimation(params);
     cout << "Got FE results" << endl;
     ifstream is(real_frequencies_file);
     double S;
     is >> S;
 
-    map<pair<double,double>, vector<double>> morethans_per_param;
-    map<pair<double,double>, vector<double>> square_sum_per_param;
-    for (const auto & param : params) {
-        const auto & estimations_per_param = fe.at(param);
+    map<pair<double, double>, vector<double>> morethans_per_param;
+    map<pair<double, double>, vector<double>> square_sum_per_param;
+    for (const auto &param : params) {
+        const auto &estimations_per_param = fe.at(param);
         for (int k = 0; k < estimations_per_param.size(); k++) {
             morethans_per_param[param].push_back(0.0);
             square_sum_per_param[param].push_back(0.0);
@@ -56,21 +55,21 @@ void frequency_estimation(vector<pair<double, double>> params, ofstream& result_
     cout << "Finished preparing morethans and ss" << endl;
 
     double number_of_flows = 0;
-    while(is.good()) {
+    while (is.good()) {
         double real_frequency;
         string flow;
         is >> real_frequency;
         is >> flow;
         ++number_of_flows;
-        for (const auto & param : params) {
+        for (const auto &param : params) {
             std::clock_t start;
             start = std::clock();
             double eps = param.first;
-            const vector<map<string, double>>& estimations_per_param = fe.at(param);
+            const vector<map<string, double>> &estimations_per_param = fe.at(param);
             for (int k = 0; k < estimations_per_param.size(); k++) {
-                const map<string, double> & estimation = estimations_per_param[k];
+                const map<string, double> &estimation = estimations_per_param[k];
                 double estimated_frequency = 0;
-                const auto & iter = estimation.find(flow);
+                const auto &iter = estimation.find(flow);
                 if (iter != estimation.end()) {
                     estimated_frequency = iter->second;
                 }
@@ -78,7 +77,7 @@ void frequency_estimation(vector<pair<double, double>> params, ofstream& result_
                 if (diff > eps * S) {
                     morethans_per_param[param][k] += 1;
                 }
-                square_sum_per_param[param][k] += pow(diff,2);
+                square_sum_per_param[param][k] += pow(diff, 2);
             }
             double duration = (std::clock() - start) / (double) CLOCKS_PER_SEC;
             cout << "took:" << duration << "[s]" << endl;
@@ -89,11 +88,12 @@ void frequency_estimation(vector<pair<double, double>> params, ofstream& result_
     }
     cout << "Before reporting results" << endl;
 
-    for (const auto & param : params) {
+    for (const auto &param : params) {
         double eps = param.first;
         double delta = param.second;
         for (int k = 0; k < morethans_per_param[param].size(); k++) {
-            result_stream << eps << "," << delta << "," << morethans_per_param[param][k] << "," << square_sum_per_param[param][k] << "," << number_of_flows << endl;
+            result_stream << eps << "," << delta << "," << morethans_per_param[param][k] << ","
+                          << square_sum_per_param[param][k] << "," << number_of_flows << endl;
         }
     }
     cout << "Done." << endl;
@@ -102,24 +102,24 @@ void frequency_estimation(vector<pair<double, double>> params, ofstream& result_
 void heavy_hitter(vector<pair<double, double>> params, double theta, const string &filename, string resDirectory,
                   const string &resfile, DATASET dataset) {
     Router router(filename, dataset);
-    map<pair<double,double>, vector<string>> params_to_THH;
-    map<pair<double,double>, vector<string>> params_to_miceFlows;
-    map<pair<double,double>, vector<string>> params_to_otherFlows;
+    map<pair<double, double>, vector<string>> params_to_THH;
+    map<pair<double, double>, vector<string>> params_to_miceFlows;
+    map<pair<double, double>, vector<string>> params_to_otherFlows;
 
-    for(const auto & param : params){
+    for (const auto &param : params) {
         double eps = param.first;
         double delta = param.second;
-        ifstream ifsHH(resDirectory+to_string(theta)+string("-")+to_string(eps)+"THH.ser");
-        ifstream ifsMice(resDirectory+to_string(theta)+string("-")+to_string(eps)+"mice.ser");
-        ifstream ifsOther(resDirectory+to_string(theta)+string("-")+to_string(eps)+"other.ser");
-        if (ifsHH.fail() || ifsMice.fail() || ifsOther.fail()){
+        ifstream ifsHH(resDirectory + to_string(theta) + string("-") + to_string(eps) + "THH.ser");
+        ifstream ifsMice(resDirectory + to_string(theta) + string("-") + to_string(eps) + "mice.ser");
+        ifstream ifsOther(resDirectory + to_string(theta) + string("-") + to_string(eps) + "other.ser");
+        if (ifsHH.fail() || ifsMice.fail() || ifsOther.fail()) {
             namespace fs = boost::filesystem;
             fs::path someDir(resDirectory);
             fs::directory_iterator end_iter;
-            for(fs::directory_iterator dir_iter(someDir); dir_iter != end_iter ; ++dir_iter) {
+            for (fs::directory_iterator dir_iter(someDir); dir_iter != end_iter; ++dir_iter) {
                 if (fs::is_regular_file(dir_iter->status())) {
                     string rs(dir_iter->path().c_str());
-                    if(boost::starts_with(string(dir_iter->path().c_str()), resfile)) {
+                    if (boost::starts_with(string(dir_iter->path().c_str()), resfile)) {
                         vector<string> THH;
                         vector<string> miceFlows;
                         vector<string> otherFlows;
@@ -139,19 +139,19 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
                                 otherFlows.push_back(flow);
                             }
                         }
-                        params_to_THH.insert(pair<pair<double,double>, vector<string>> (param, THH));
-                        params_to_miceFlows.insert(pair<pair<double,double>, vector<string>> (param, miceFlows));
-                        params_to_otherFlows.insert(pair<pair<double,double>, vector<string>> (param, otherFlows));
+                        params_to_THH.insert(pair<pair<double, double>, vector<string>>(param, THH));
+                        params_to_miceFlows.insert(pair<pair<double, double>, vector<string>>(param, miceFlows));
+                        params_to_otherFlows.insert(pair<pair<double, double>, vector<string>>(param, otherFlows));
                     }
                 }
             }
-            ofstream ofsHH(resDirectory+to_string(theta)+string("-")+to_string(eps)+"THH.ser");
+            ofstream ofsHH(resDirectory + to_string(theta) + string("-") + to_string(eps) + "THH.ser");
             boost::archive::text_oarchive oa(ofsHH);
             oa << params_to_THH[param];
-            ofstream ofsMice(resDirectory+to_string(theta)+string("-")+to_string(eps)+"mice.ser");
+            ofstream ofsMice(resDirectory + to_string(theta) + string("-") + to_string(eps) + "mice.ser");
             boost::archive::text_oarchive ob(ofsMice);
             ob << params_to_miceFlows[param];
-            ofstream ofsOther(resDirectory+to_string(theta)+string("-")+to_string(eps)+"other.ser");
+            ofstream ofsOther(resDirectory + to_string(theta) + string("-") + to_string(eps) + "other.ser");
             boost::archive::text_oarchive oc(ofsOther);
             oc << params_to_otherFlows[param];
         } else {
@@ -163,8 +163,8 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
             ic >> params_to_otherFlows[param];
         }
     }
-    const auto & samples = router.heavy_hitters(params);
-    for(const auto & param : params) {
+    const auto &samples = router.heavy_hitters(params);
+    for (const auto &param : params) {
         vector<double> FPRs;
         vector<double> FNRs;
         double eps = param.first;
@@ -201,8 +201,9 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
 }
 
 int main(int argc, char **argv) {
-    if(argc < 3) {
-        throw invalid_argument("Please provide test (VE, FE, HH) and dataset (CAIDA, UCLA, UCLA_FULL, UNIV1, UINV2, TEST).");
+    if (argc < 3) {
+        throw invalid_argument(
+                "Please provide test (VE, FE, HH) and dataset (CAIDA, UCLA, UCLA_FULL, UNIV1, UINV2, TEST).");
     }
     const TEST t = testEnum(argv[1]);
     const DATASET d = datasetEnum(argv[2]);
@@ -218,65 +219,66 @@ int main(int argc, char **argv) {
 
     const string dataset_file = datasets_path + DATASET + "/" + dataset + datasets_suffix;
     const string result_file = results_path + test + "_" + dataset + results_suffix;
-    const string real_frequencies_file = datasets_path + DATASET + "/" + dataset + "_flows_count-" + getFrequencyLimit(d) + datasets_suffix;
+    const string real_frequencies_file =
+            datasets_path + DATASET + "/" + dataset + "_flows_count-" + getFrequencyLimit(d) + datasets_suffix;
 
     bool addCSVHeader = false;
     ifstream check_result_stream;
     check_result_stream.open(result_file, fstream::in | fstream::out | fstream::app);
-    if(!check_result_stream) {
+    if (!check_result_stream) {
         throw invalid_argument("Could not open " + result_file + " for reading.");
     }
-    if(check_result_stream.peek() == EOF) {
+    if (check_result_stream.peek() == EOF) {
         addCSVHeader = true;
     }
     check_result_stream.close();
 
     ofstream result_stream;
     result_stream.open(result_file, fstream::in | fstream::out | fstream::app);
-    if(!result_stream) {
+    if (!result_stream) {
         throw invalid_argument("Could not open " + result_file + " for writing.");
     }
 
-    switch(t) {
+    switch (t) {
         case TEST::VE: {
-            if(addCSVHeader) {
+            if (addCSVHeader) {
                 result_stream << "counters,packets,estimation" << endl;
             }
             vector<int> counters = {128, 512, 1024};
             volume_estimation(counters, result_stream, dataset_file, d);
         }
-        break;
+            break;
         case TEST::FE: {
             if (addCSVHeader) {
                 result_stream << "eps,delta,more_than,square_sum,number_of_flows" << endl;
             }
             vector<pair<double, double>> params;
             double epss[] = {0.1, 0.05, 0.01, 0.005};
-            for(auto eps : epss) {
-                for(int delta_pow = -2; delta_pow > -6; --delta_pow) {
+            for (auto eps : epss) {
+                for (int delta_pow = -2; delta_pow > -6; --delta_pow) {
                     double delta = pow(2, delta_pow);
                     params.emplace_back(eps, delta);
                 }
             }
             frequency_estimation(params, result_stream, dataset_file, real_frequencies_file, d);
         }
-        break;
+            break;
         case TEST::HH: {
-            if(addCSVHeader) {
+            if (addCSVHeader) {
                 result_stream << "eps,delta,theta,FPR,FPR_upper_ci,FPR_lower_ci,FNR,FNR_upper_ci,FNR_lower_ci" << endl;
             }
             double theta = 0.01;
             vector<pair<double, double>> params;
             double epss[] = {0.005};
-            for(auto eps : epss) {
-                for(int delta_pow = -2; delta_pow > -6; --delta_pow) {
+            for (auto eps : epss) {
+                for (int delta_pow = -2; delta_pow > -6; --delta_pow) {
                     double delta = pow(2, delta_pow);
                     params.emplace_back(eps, delta);
                 }
             }
             heavy_hitter(params, theta, dataset_file, "../datasets_files/" + DATASET + "/", result_file, d);
         }
-        break;
+            break;
     }
 
     result_stream.close();

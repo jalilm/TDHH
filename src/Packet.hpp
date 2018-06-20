@@ -10,7 +10,9 @@ namespace TDHH {
     class Packet {
     public:
         Packet() = default;
+
         virtual ~Packet() = default;
+
         virtual std::string getReprString() const = 0;
     };
 
@@ -21,10 +23,13 @@ namespace TDHH {
         int id;
     public:
         IPPacket() = default;
-        virtual ~IPPacket() = default;
-        IPPacket(std::string src_ip, std::string dst_ip, int id) : src_ip(std::move(std::move(src_ip))), dst_ip(std::move(std::move(dst_ip))), id(id) {}
 
-        std::string getReprString() const override{
+        virtual ~IPPacket() = default;
+
+        IPPacket(std::string src_ip, std::string dst_ip, int id) : src_ip(std::move(std::move(src_ip))),
+                                                                   dst_ip(std::move(std::move(dst_ip))), id(id) {}
+
+        std::string getReprString() const override {
             std::stringstream sstm;
             sstm << src_ip << "." << dst_ip << "." << id;
             return sstm.str();
@@ -43,8 +48,11 @@ namespace TDHH {
         std::string protocol;
     public:
         TransportPacket() = default;
+
         virtual ~TransportPacket() = default;
-        TransportPacket(std::string src_ip, std::string dst_ip, std::string src_port, std::string dst_port, std::string protocol, int id) :
+
+        TransportPacket(std::string src_ip, std::string dst_ip, std::string src_port, std::string dst_port,
+                        std::string protocol, int id) :
                 IPPacket(std::move(src_ip), std::move(dst_ip), id),
                 src_port(src_port),
                 dst_port(dst_port),

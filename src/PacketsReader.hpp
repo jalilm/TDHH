@@ -29,14 +29,19 @@ namespace TDHH {
         string PORT_SRC;
         string PORT_DST;
 
-        void getNextUCLAPacket(const CSVIterator& it);
-        void getNextCAIDAPacket(const CSVIterator& it);
-        void getNextUNIVPacket(const CSVIterator& it);
-        void getNextPacket(const CSVIterator& it);
+        void getNextUCLAPacket(const CSVIterator &it);
+
+        void getNextCAIDAPacket(const CSVIterator &it);
+
+        void getNextUNIVPacket(const CSVIterator &it);
+
+        void getNextPacket(const CSVIterator &it);
 
 
     public:
-        explicit PacketsReader(string filename, DATASET dataset) : filename(std::move(std::move(filename))), dataset(dataset), id(0), length(0), proto(""), IP_SRC(""), IP_DST(""), PORT_SRC(""), PORT_DST("") {
+        explicit PacketsReader(string filename, DATASET dataset) : filename(std::move(std::move(filename))),
+                                                                   dataset(dataset), id(0), length(0), proto(""),
+                                                                   IP_SRC(""), IP_DST(""), PORT_SRC(""), PORT_DST("") {
             infile = ifstream(this->filename);
             it = CSVIterator(infile);
         }

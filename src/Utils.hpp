@@ -5,10 +5,14 @@
 
 using namespace std;
 
-enum class TEST { VE, FE, HH};
-enum class DATASET { CAIDA, UCLA, UCLA_FULL, UNIV1, UNIV2, TEST};
+enum class TEST {
+    VE, FE, HH
+};
+enum class DATASET {
+    CAIDA, UCLA, UCLA_FULL, UNIV1, UNIV2, TEST
+};
 
-inline string testName(const TEST& t) {
+inline string testName(const TEST &t) {
     switch (t) {
         case TEST::VE:
             return "ve";
@@ -19,7 +23,7 @@ inline string testName(const TEST& t) {
     }
 }
 
-inline string datasetName(const DATASET& d) {
+inline string datasetName(const DATASET &d) {
     switch (d) {
         case DATASET::CAIDA:
             return "caida";
@@ -36,29 +40,29 @@ inline string datasetName(const DATASET& d) {
     }
 }
 
-inline TEST testEnum(const char* c) {
-    if(strcmp(c, "VE") == 0) {
+inline TEST testEnum(const char *c) {
+    if (strcmp(c, "VE") == 0) {
         return TEST::VE;
-    } else if(strcmp(c, "FE") == 0) {
+    } else if (strcmp(c, "FE") == 0) {
         return TEST::FE;
-    } else if(strcmp(c, "HH") == 0) {
+    } else if (strcmp(c, "HH") == 0) {
         return TEST::HH;
     }
     throw invalid_argument("Please provide a supported test: VE, FE, HH, WVE, WFE, WHH.");
 }
 
-inline DATASET datasetEnum(const char* c) {
-    if(strcmp(c, "CAIDA") == 0) {
+inline DATASET datasetEnum(const char *c) {
+    if (strcmp(c, "CAIDA") == 0) {
         return DATASET::CAIDA;
-    } else if(strcmp(c, "UCLA") == 0) {
+    } else if (strcmp(c, "UCLA") == 0) {
         return DATASET::UCLA;
-    } else if(strcmp(c, "UCLA_FULL") == 0) {
+    } else if (strcmp(c, "UCLA_FULL") == 0) {
         return DATASET::UCLA_FULL;
-    } else if(strcmp(c, "UNIV1") == 0) {
+    } else if (strcmp(c, "UNIV1") == 0) {
         return DATASET::UNIV1;
-    } else if(strcmp(c, "UNIV2") == 0) {
+    } else if (strcmp(c, "UNIV2") == 0) {
         return DATASET::UNIV2;
-    } else if(strcmp(c, "TEST") == 0) {
+    } else if (strcmp(c, "TEST") == 0) {
         return DATASET::TEST;
     }
     throw invalid_argument("Please provide a supported dataset: CAIDA, CAIDA18, UCLA, UCLA_FULL, UNIV1, UNIV2.");
