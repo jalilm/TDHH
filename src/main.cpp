@@ -36,11 +36,11 @@ vector<double> volume_estimation(vector<int> counters, ofstream & result_stream,
     return estimations;
 }
 
-void frequency_estimation(vector<pair<double, double>> params, ofstream& result_stream, const string &dataset_file, const string &real_freq_file, DATASET dataset) {
+void frequency_estimation(vector<pair<double, double>> params, ofstream& result_stream, const string &dataset_file, const string &real_frequencies_file, DATASET dataset) {
     Router r(dataset_file, dataset);
     const auto & fe = r.frequencyEstimation(params);
     cout << "Got FE results" << endl;
-    ifstream is(real_freq_file);
+    ifstream is(real_frequencies_file);
     double S;
     is >> S;
 
@@ -57,9 +57,9 @@ void frequency_estimation(vector<pair<double, double>> params, ofstream& result_
 
     double number_of_flows = 0;
     while(is.good()) {
-        double real_freq;
+        double real_frequency;
         string flow;
-        is >> real_freq;
+        is >> real_frequency;
         is >> flow;
         ++number_of_flows;
         for (const auto & param : params) {
@@ -69,12 +69,12 @@ void frequency_estimation(vector<pair<double, double>> params, ofstream& result_
             const vector<map<string, double>>& estimations_per_param = fe.at(param);
             for (int k = 0; k < estimations_per_param.size(); k++) {
                 const map<string, double> & estimation = estimations_per_param[k];
-                double est_freq = 0;
+                double estimated_frequency = 0;
                 const auto & iter = estimation.find(flow);
                 if (iter != estimation.end()) {
-                    est_freq = iter->second;
+                    estimated_frequency = iter->second;
                 }
-                double diff = abs(real_freq - est_freq);
+                double diff = abs(real_frequency - estimated_frequency);
                 if (diff > eps * S) {
                     morethans_per_param[param][k] += 1;
                 }
@@ -84,7 +84,7 @@ void frequency_estimation(vector<pair<double, double>> params, ofstream& result_
             cout << "took:" << duration << "[s]" << endl;
         }
         if (int(number_of_flows) % 1000 == 0) {
-            cout << "Finished reading freq of " << number_of_flows << endl;
+            cout << "Finished reading frequencis of " << number_of_flows << endl;
         }
     }
     cout << "Before reporting results" << endl;
@@ -127,13 +127,13 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
                         double S;
                         is >> S;
                         while (is.good()) {
-                            double real_freq;
+                            double real_frequency;
                             string flow;
-                            is >> real_freq;
+                            is >> real_frequency;
                             is >> flow;
-                            if (real_freq >= S * theta) {
+                            if (real_frequency >= S * theta) {
                                 THH.push_back(flow);
-                            } else if (real_freq < S * (theta - eps)) {
+                            } else if (real_frequency < S * (theta - eps)) {
                                 miceFlows.push_back(flow);
                             } else {
                                 otherFlows.push_back(flow);
@@ -178,7 +178,7 @@ void heavy_hitter(vector<pair<double, double>> params, double theta, const strin
             vector<string> HH;
             for (const auto &item : sample) {
                 string flow = item.first;
-                double est_freq = item.second;
+                double estimated_frequency = item.second;
                 if (item.second >= (theta - eps / 2.0) * chi) {
                     HH.push_back(item.first);
                 }
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
 
     const string dataset_file = datasets_path + DATASET + "/" + dataset + datasets_suffix;
     const string result_file = results_path + test + "_" + dataset + results_suffix;
-    const string real_freq_file = datasets_path + DATASET + "/" + dataset + "_flows_count-" + getFreqLimit(d) + datasets_suffix;
+    const string real_frequencies_file = datasets_path + DATASET + "/" + dataset + "_flows_count-" + getFrequencyLimit(d) + datasets_suffix;
 
     bool addCSVHeader = false;
     ifstream check_result_stream;
@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
                     params.emplace_back(eps, delta);
                 }
             }
-            frequency_estimation(params, result_stream, dataset_file, real_freq_file, d);
+            frequency_estimation(params, result_stream, dataset_file, real_frequencies_file, d);
         }
         break;
         case TEST::HH: {

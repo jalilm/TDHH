@@ -64,7 +64,7 @@ inline DATASET datasetEnum(const char* c) {
     throw invalid_argument("Please provide a supported dataset: CAIDA, CAIDA18, UCLA, UCLA_FULL, UNIV1, UNIV2.");
 }
 
-inline string getFreqLimit(DATASET dataset) {
+inline string getFrequencyLimit(DATASET dataset) {
     switch (dataset) {
         case DATASET::CAIDA:
         case DATASET::UCLA:

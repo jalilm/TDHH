@@ -1,7 +1,3 @@
-//
-// Created by jalilm on 15/05/18.
-//
-
 #ifndef TDHH_MATHUTILS_HPP
 #define TDHH_MATHUTILS_HPP
 
@@ -56,6 +52,5 @@ void MEAN(t1 real_result, const vector<t1> &observations, t1 (*func)(t1, t1), bo
         cout << ",";
     }
 }
-
 
 #endif //TDHH_MATHUTILS_HPP

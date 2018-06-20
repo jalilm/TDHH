@@ -95,16 +95,20 @@ namespace hll {
         }
 
         /**
+         * Sets a specifiv seed for the estimator
+         *
+         * @param[in] s seed to set
+         */
+        virtual void set_seed(uint32_t s) {
+            seed = s;
+        }
+
+        /**
          * Adds element to the estimator
          *
          * @param[in] str string to add
          * @param[in] len length of string
          */
-
-        virtual void set_seed(uint32_t s) {
-            seed = s;
-        }
-
         virtual void add(const char *str, int len) {
             uint32_t hash;
             MurmurHash3_x86_32((const void *) str, len, seed, (void *) &hash);
@@ -113,27 +117,6 @@ namespace hll {
             if (rank > M_[index]) {
                 M_[index] = rank;
             }
-        }
-
-        virtual void add_weighted(const char *str, int len, uint32_t weight) {
-            for(int i =0 ; i < weight; ++i) {
-                std::string new_str(str);
-                new_str = new_str.append(".");
-                new_str = new_str.append(std::to_string(i));
-                add(new_str.c_str(), new_str.size());
-            }
-//            //TODO: fix O(1) WVE.
-//            uint32_t hash;
-//            MurmurHash3_x86_32(str, len, seed, (void *) &hash);
-//            uint32_t index = hash >> (32 - b_);
-//            double dhash = double(hash) / double(UINT32_MAX);
-//            dhash = (1 - pow((1.0 - dhash), (1.0 / double(weight))));
-//            //hash = dhash * double(UINT32_MAX);
-//            uint8_t rank = floor(-1 * log2(dhash));
-//            //uint8_t rank = _GET_CLZ((hash << b_), 32 - b_);
-//            if (rank > M_[index]) {
-//                M_[index] = rank;
-//            }
         }
 
         /**

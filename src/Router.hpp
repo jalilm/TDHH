@@ -1,15 +1,10 @@
-//
-// Created by jalilm on 26/03/18.
-//
-
 #ifndef TDHH_ROUTER_HPP
 #define TDHH_ROUTER_HPP
 
 #include <string>
 #include "PacketsReader.hpp"
 #include "Hyperloglog.hpp"
-#include "QMax.hpp"
-#include "AmortizedConstantTimeQMax.hpp"
+#include "Heap.hpp"
 #include <map>
 #include <boost/functional/hash.hpp>
 #include <boost/math/special_functions/beta.hpp>
@@ -25,21 +20,6 @@ namespace TDHH {
     class Router {
 
     private:
-        template<typename URNG>
-        double beta_sample(URNG &engine, double a, double b) {
-            if (b == 0) {
-                return 0;
-            }
-            static std::uniform_real_distribution<double> unif(0, 1);
-            double p = unif(engine);
-            return boost::math::ibeta_inv(a, b, p); // Use Boost policies if it's not fast enough
-        }
-
-        int hashCode(const string &s) {
-            boost::hash<std::string> string_hash;
-            return string_hash(s);
-        }
-
         DATASET dataset;
 
     protected:
@@ -99,52 +79,14 @@ namespace TDHH {
             return res;
         }
 
-//        map<pair<int, unsigned int>, pair<unsigned long long int,double>> weightedVolumeEstimation(vector<int> counters) {
-//            map<pair<int, unsigned int>, pair<unsigned long long int,double>> res;
-//            std::random_device rd;
-//            map<int, HyperLogLog> hll_arr;
-//            for (int c : counters) {
-//                HyperLogLog hll(log2(c));
-//                hll.set_seed(rd());
-//                hll_arr.insert(pair<int, HyperLogLog>(c, hll));
-//            }
-//            auto pkt = pr.getNextWeightedIPPacket();
-//            unsigned long long int i = 0;
-//            unsigned int num_pkts = 0;
-//            while (pkt != nullptr) {
-//                const auto& pkt_string = pkt->getReprString();
-//                int w = pkt->weight;
-//                i += w;
-//                ++num_pkts;
-//                for(auto item : hll_arr) {
-//                    item.second.add_weighted(pkt_string.c_str(), pkt_string.size(), w);
-//                }
-//                delete pkt;
-//                if (num_pkts % 1000000 == 0) {
-//                    for(const auto & item: hll_arr) {
-//                        pair<int, unsigned int> sp1(item.first, num_pkts);
-//                        pair<unsigned long long int, double> sp2(i, item.second.estimate());
-//                        res.insert(pair<pair<int, unsigned int>, pair<unsigned long long int, double>>(sp1,sp2));
-//                    }
-//                }
-//                pkt = pr.getNextWeightedIPPacket();
-//            }
-//            for(const auto & item: hll_arr) {
-//                pair<int, unsigned int> sp1(item.first, num_pkts);
-//                pair<unsigned long long int, double> sp2(i, item.second.estimate());
-//                res.insert(pair<pair<int, unsigned int>, pair<unsigned long long int, double>>(sp1,sp2));
-//            }
-//            return res;
-//        }
-
-        QMax* sample(double eps, double delta, bool formula_chi = true) {
+        Heap* sample(double eps, double delta, bool formula_chi = true) {
             unsigned int chi;
             if (formula_chi) {
                  chi = ceil(3.0 / (eps * eps) * log2(2.0 / delta));
             } else {
                 chi = ceil(9.0 / (eps * eps) * log2(2.0 / (delta * eps)));
             }
-            QMax* chiMax = new AmortizedConstantTimeQMax(chi);
+            Heap* chiMax = new Heap(chi);
             auto pkt = pr.getNextIPPacket();
             while (pkt != nullptr) {
                 chiMax->Add(pkt->getReprString());
@@ -154,56 +96,28 @@ namespace TDHH {
             return chiMax;
         }
 
-//        QMax* weighted_sample(double eps, double delta, bool formula_chi = true) {
-//            unsigned int chi;
-//            if (formula_chi) {
-//                chi = ceil(3.0 / (eps * eps) * log2(2.0 / delta));
-//            } else {
-//                chi = ceil(9.0 / (eps * eps) * log2(2.0 / (delta * eps)));
-//            }
-//            QMax* chiMax = new AmortizedConstantTimeQMax(chi);
-//            auto pkt = pr.getNextWeightedIPPacket();
-//            while (pkt != nullptr) {
-//                int w = pkt->weight;
-//                int hc = hashCode(pkt->getReprString());
-//                std::mt19937 prng(hc);
-//                double p = beta_sample(prng, 1, w);
-//                int i = 0;
-//                bool added = true;
-//                int min = w < chi ? w : chi;
-//                while ((i < min) && added) {
-//                    added = chiMax->add_weighted(p, *pkt);
-//                    i++;
-//                    p *= beta_sample(prng, 1, w - i);
-//                }
-//                delete pkt;
-//                pkt = pr.getNextWeightedIPPacket();
-//            }
-//            return chiMax;
-//        }
-
         map<pair<double,double>, vector<map<string, double>>> heavy_hitters(vector<pair<double,double>> params) {
             map<pair<double,double>, vector<map<string, double>>> res;
 
-            map<pair<double, double>, vector<QMax*>> param_to_qmax_arr;
+            map<pair<double, double>, vector<Heap*>> param_to_heap_arr;
             for (const auto & param : params) {
                 double eps = param.first;
                 double delta = param.second;
                 unsigned int chi = ceil(9.0 / (eps * eps) * log2(2.0 / (delta * eps)));
-                vector<QMax *> qmax_arr;
+                vector<Heap *> heap_arr;
                 for (int I = 0; I < ITERATIONS; I++) {
-                    QMax* chiMax = new AmortizedConstantTimeQMax(chi);
-                    qmax_arr.push_back(chiMax);
+                    Heap* heap = new Heap(chi);
+                    heap_arr.push_back(heap);
                 }
-                param_to_qmax_arr.insert(pair<pair<double, double>, vector<QMax*>>(param,qmax_arr));
+                param_to_heap_arr.insert(pair<pair<double, double>, vector<Heap*>>(param,heap_arr));
             }
 
             unsigned int num_pkts = 0;
             auto pkt = pr.getNextIPPacket();
             while (pkt != nullptr) {
                 for (const auto & param : params) {
-                    for (auto & qmax : param_to_qmax_arr.at(param)) {
-                        qmax->Add(pkt->getReprString());
+                    for (auto & heap : param_to_heap_arr.at(param)) {
+                        heap->Add(pkt->getReprString());
                     }
                 }
                 delete pkt;
@@ -213,24 +127,20 @@ namespace TDHH {
 
             for (const auto & param : params) {
                 vector<map<string, double>> samples;
-                for (auto & qmax : param_to_qmax_arr.at(param)) {
-                    samples.push_back(qmax->GetSample());
+                for (auto & heap : param_to_heap_arr.at(param)) {
+                    samples.push_back(heap->GetSample());
                 }
                 res.insert(pair<pair<double,double>, vector<map<string,double>>>(param, samples));
             }
 
             for (const auto & param : params) {
-                for (auto & qmax : param_to_qmax_arr.at(param)) {
-                    delete qmax;
+                for (auto & heap : param_to_heap_arr.at(param)) {
+                    delete heap;
                 }
             }
 
             return res;
         }
-
-//        QMax* weighted_heavy_hitters(double eps, double delta) {
-//            return weighted_sample(eps, delta, false);
-//        }
 
         int doNothing() {
             auto pkt = pr.getNextIPPacket();
@@ -263,17 +173,17 @@ namespace TDHH {
                 param_to_hll_arr.insert(pair<pair<double, double>, vector<HyperLogLog>>(param,hll_arr));
             }
 
-            map<pair<double, double>, vector<QMax*>> param_to_qmax_arr;
+            map<pair<double, double>, vector<Heap*>> param_to_heap_arr;
             for (const auto & param : params) {
                 double eps = param.first;
                 double delta = param.second;
                 unsigned int chi = ceil(3.0 / (eps/2 * eps/2) * log2(2.0 / delta/2));
-                vector<QMax*> qmax_arr;
+                vector<Heap*> heap_arr;
                 for (int I = 0; I < ITERATIONS; I++) {
-                    QMax* chiMax = new AmortizedConstantTimeQMax(chi);
-                    qmax_arr.push_back(chiMax);
+                    Heap* chiMax = new Heap(chi);
+                    heap_arr.push_back(chiMax);
                 }
-                param_to_qmax_arr.insert(pair<pair<double, double>, vector<QMax*>>(param,qmax_arr));
+                param_to_heap_arr.insert(pair<pair<double, double>, vector<Heap*>>(param,heap_arr));
             }
 
             int num_pkts = 0;
@@ -284,7 +194,7 @@ namespace TDHH {
             auto pkt = pr.getNextIPPacket();
             while (pkt != nullptr) {
                 ++num_pkts;
-                if(num_pkts > stoi(getFreqLimit(dataset))) {
+                if(num_pkts > stoi(getFrequencyLimit(dataset))) {
                     break;
                 }
                 const auto& pkt_string = pkt->getReprString();
@@ -292,8 +202,8 @@ namespace TDHH {
                     for (auto & hll : param_to_hll_arr.at(param)) {
                         hll.add(pkt_string.c_str(), pkt_string.size());
                     }
-                    for (auto & qmax : param_to_qmax_arr.at(param)) {
-                        qmax->Add(pkt->getReprString());
+                    for (auto & heap : param_to_heap_arr.at(param)) {
+                        heap->Add(pkt->getReprString());
                     }
                 }
                 delete pkt;
@@ -317,8 +227,8 @@ namespace TDHH {
                     cout << "hll.estimate:" << d << endl;
                     Ps.push_back(chi/hll.estimate());
                 }
-                for (auto & qmax : param_to_qmax_arr.at(param)) {
-                    const auto & s = qmax->GetSample();
+                for (auto & heap : param_to_heap_arr.at(param)) {
+                    const auto & s = heap->GetSample();
                     samples.push_back(s);
                 }
 
@@ -328,10 +238,10 @@ namespace TDHH {
                     cout << "p:" << p << endl;
                     for(const auto & s : sample) {
                         cout << "flow:" << s.first << endl;
-                        cout << "sam_freq:" << s.second << endl;
-                        double est_freq = s.second/p;
-                        sample[s.first] = est_freq;
-                        cout << "est_freq:" << est_freq << endl;
+                        cout << "sampled_frequency:" << s.second << endl;
+                        double estimated_frequency = s.second/p;
+                        sample[s.first] = estimated_frequency;
+                        cout << "estimated_frequency:" << estimated_frequency << endl;
                     }
                     res[param] = samples;
                 }
@@ -339,12 +249,11 @@ namespace TDHH {
             cout << "Finished preparing samples" << endl;
 
             for (const auto & param : params) {
-                for (auto & qmax : param_to_qmax_arr.at(param)) {
-                    delete qmax;
+                for (auto & heap : param_to_heap_arr.at(param)) {
+                    delete heap;
                 }
             }
-            cout << "Finished deleting QMaxs" << endl;
-
+            cout << "Finished deleting heaps" << endl;
             return res;
         }
     };

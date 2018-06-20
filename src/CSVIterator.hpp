@@ -1,3 +1,8 @@
+/**
+ * Based on StackOverflow answer at:
+ * https://stackoverflow.com/a/1120224
+ * By: https://stackoverflow.com/users/14065/martin-york
+ */
 #ifndef TDHH_CSVITERATOR_HPP
 #define TDHH_CSVITERATOR_HPP
 

@@ -1,7 +1,3 @@
-//
-// Created by jalilm on 22/03/2018.
-//
-
 #ifndef TDHH_PACKETS_READER_HPP
 #define TDHH_PACKETS_READER_HPP
 
@@ -35,7 +31,6 @@ namespace TDHH {
 
         void getNextUCLAPacket(const CSVIterator& it);
         void getNextCAIDAPacket(const CSVIterator& it);
-        void getNextCAIDA18Packet(const CSVIterator& it);
         void getNextUNIVPacket(const CSVIterator& it);
         void getNextPacket(const CSVIterator& it);
 
@@ -54,9 +49,7 @@ namespace TDHH {
 
         IPPacket *getNextIPPacket();
 
-//        WeightedIPPacket *getNextWeightedIPPacket();
-//
-//        TransportPacket *getNextTransportPacket();
+        TransportPacket *getNextTransportPacket();
     };
 }
 

@@ -1,7 +1,3 @@
-//
-// Created by jalilm on 22/03/2018.
-//
-
 #ifndef TDHH_PACKET_HPP
 #define TDHH_PACKET_HPP
 
@@ -40,31 +36,15 @@ namespace TDHH {
         }
     };
 
-    class WeightedIPPacket : public IPPacket {
-    public:
-        unsigned int weight;
-
-        WeightedIPPacket() = default;
-        virtual ~WeightedIPPacket() = default;
-        WeightedIPPacket(std::string src_ip, std::string dst_ip, int id, int length) : IPPacket(std::move(src_ip),
-                                                                                      std::move(dst_ip), id),
-                                                                             weight(length) {};
-
-        inline friend std::ostream &operator<<(std::ostream &ostream, WeightedIPPacket const &v) {
-            ostream << std::string("IP_SRC:") << v.src_ip << ",IP_DST:" << v.dst_ip << ",ID:" << v.id << ",WEIGHT:" << v.weight;
-            return ostream;
-        }
-    };
-
     class TransportPacket : public IPPacket {
     protected:
-        int src_port;
-        int dst_port;
+        std::string src_port;
+        std::string dst_port;
         std::string protocol;
     public:
         TransportPacket() = default;
         virtual ~TransportPacket() = default;
-        TransportPacket(std::string src_ip, std::string dst_ip, int src_port, int dst_port, std::string protocol, int id) :
+        TransportPacket(std::string src_ip, std::string dst_ip, std::string src_port, std::string dst_port, std::string protocol, int id) :
                 IPPacket(std::move(src_ip), std::move(dst_ip), id),
                 src_port(src_port),
                 dst_port(dst_port),
