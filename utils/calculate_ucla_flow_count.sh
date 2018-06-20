@@ -8,10 +8,10 @@ STEP=1000000
 
 count=0
 lines=`cat ${DIR}${TRACE_FILE} | wc -l`
-sizes=`seq 0 ${STEP} $lines`
+sizes=`seq 0 ${STEP} ${lines}`
 touch ${DIR}${RES_PREFIX}-0.csv;
 
-for i in $sizes; do
+for i in ${sizes}; do
     let si=i+1;
     let j=i+${STEP};
     let k=j+1;

@@ -20,11 +20,11 @@ namespace TDHH {
     protected:
         std::string src_ip;
         std::string dst_ip;
-        int id;
+        int id{};
     public:
         IPPacket() = default;
 
-        virtual ~IPPacket() = default;
+        ~IPPacket() override = default;
 
         IPPacket(std::string src_ip, std::string dst_ip, int id) : src_ip(std::move(std::move(src_ip))),
                                                                    dst_ip(std::move(std::move(dst_ip))), id(id) {}
@@ -49,13 +49,13 @@ namespace TDHH {
     public:
         TransportPacket() = default;
 
-        virtual ~TransportPacket() = default;
+        ~TransportPacket() override = default;
 
         TransportPacket(std::string src_ip, std::string dst_ip, std::string src_port, std::string dst_port,
                         std::string protocol, int id) :
                 IPPacket(std::move(src_ip), std::move(dst_ip), id),
-                src_port(src_port),
-                dst_port(dst_port),
+                src_port(std::move(std::move(src_port))),
+                dst_port(std::move(std::move(dst_port))),
                 protocol(std::move(std::move(protocol))) {}
 
         std::string getReprString() const override {

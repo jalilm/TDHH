@@ -11,7 +11,7 @@ struct minHeapComparator {
     }
 };
 
-bool Heap::Add(string item) {
+bool Heap::Add(const string &item) {
     bool added = false;
     HeapItem heap_item(item, hash(item));
     if (minHeap.size() < chi) {
@@ -31,7 +31,7 @@ bool Heap::Add(string item) {
     return added;
 }
 
-unsigned long Heap::size() const {
+unsigned long Heap::Size() const {
     return minHeap.size();
 }
 
@@ -48,7 +48,7 @@ std::map<string, double> Heap::GetSample() const {
     auto items = GetItems();
     for (const auto &item : items) {
         string flow = item.GetPair().first;
-        std::map<string, double>::iterator it(res.find(flow));
+        auto it(res.find(flow));
         if (it != res.end()) {
             it->second++;
         } else {

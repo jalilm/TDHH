@@ -21,8 +21,8 @@ namespace TDHH {
         string filename;
         ifstream infile;
         CSVIterator it;
-        unsigned long long int id;
-        unsigned long long int length;
+        int id;
+        int length;
         string proto;
         string IP_SRC;
         string IP_DST;

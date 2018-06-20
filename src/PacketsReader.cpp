@@ -25,7 +25,7 @@ namespace TDHH {
                     PORT_DST = (*it)[4];
                     break;
                 case 5:
-                    if ((*it)[5].compare("U") == 0) {
+                    if ((*it)[5] == "U") {
                         length = stoi((*it)[6]) + 64; // add 64 bytes of headers.
                         proto = "UDP (17)";
                     } else {
@@ -33,6 +33,7 @@ namespace TDHH {
                         proto = "TCP (6)";
                     }
                     break;
+                default:;
             }
             ++i;
         }
@@ -51,31 +52,31 @@ namespace TDHH {
     void PacketsReader::getNextCAIDAPacket(const CSVIterator &it) {
         unsigned long pos;
         string field = (*it)[0];
-        pos = field.find(":");
+        pos = field.find(':');
         id = stoi(field.substr(pos + 1, field.length()));
 
         field = (*it)[1];
-        pos = field.find(":");
+        pos = field.find(':');
         proto = field.substr(pos + 1, field.length());
 
         field = (*it)[2];
-        pos = field.find(":");
+        pos = field.find('.');
         length = stoi(field.substr(pos + 1, field.length()));
 
         field = (*it)[3];
-        pos = field.find(":");
+        pos = field.find('.');
         IP_SRC = field.substr(pos + 1, field.length());
 
         field = (*it)[4];
-        pos = field.find(":");
+        pos = field.find('.');
         IP_DST = field.substr(pos + 1, field.length());
 
         field = (*it)[5];
-        pos = field.find(":");
+        pos = field.find('.');
         PORT_DST = field.substr(pos + 1, field.length());
 
         field = (*it)[6];
-        pos = field.find(":");
+        pos = field.find('.');
         PORT_SRC = field.substr(pos + 1, field.length());
     }
 
@@ -89,12 +90,13 @@ namespace TDHH {
             case DATASET::UNIV1:
             case DATASET::UNIV2:
                 return getNextUNIVPacket(it);
+            default:;
         }
     }
 
     IPPacket *PacketsReader::getNextIPPacket() {
         if (it == CSVIterator()) {
-            return NULL;
+            return nullptr;
         }
         getNextPacket(it++);
         return new IPPacket(IP_SRC, IP_DST, id);
@@ -102,7 +104,7 @@ namespace TDHH {
 
     TransportPacket *PacketsReader::getNextTransportPacket() {
         if (it == CSVIterator()) {
-            return NULL;
+            return nullptr;
         }
         getNextPacket(it++);
         return new TransportPacket(IP_SRC, IP_DST, PORT_SRC, PORT_DST, proto, id);

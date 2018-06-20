@@ -41,10 +41,10 @@ namespace TDHH {
             std::random_device rd;
             map<int, vector<HyperLogLog> > counter_to_hll_arr;
             for (const int c : counters) {
-                int bits = log2(c);
+                auto bits = static_cast<int>(log2(c));
                 vector<HyperLogLog> hll_arr;
                 for (int I = 0; I < ITERATIONS; I++) {
-                    HyperLogLog hll(bits);
+                    HyperLogLog hll(static_cast<uint8_t>(bits));
                     hll.set_seed(rd());
                     hll_arr.push_back(hll);
                 }
@@ -57,7 +57,7 @@ namespace TDHH {
                 const auto &pkt_string = pkt->getReprString();
                 for (const int c: counters) {
                     for (auto &hll : counter_to_hll_arr.at(c)) {
-                        hll.add(pkt_string.c_str(), pkt_string.size());
+                        hll.add(pkt_string.c_str(), static_cast<int>(pkt_string.size()));
                     }
                 }
                 delete pkt;
@@ -78,23 +78,6 @@ namespace TDHH {
             return res;
         }
 
-        Heap *sample(double eps, double delta, bool formula_chi = true) {
-            unsigned int chi;
-            if (formula_chi) {
-                chi = ceil(3.0 / (eps * eps) * log2(2.0 / delta));
-            } else {
-                chi = ceil(9.0 / (eps * eps) * log2(2.0 / (delta * eps)));
-            }
-            Heap *chiMax = new Heap(chi);
-            auto pkt = pr.getNextIPPacket();
-            while (pkt != nullptr) {
-                chiMax->Add(pkt->getReprString());
-                delete pkt;
-                pkt = pr.getNextIPPacket();
-            }
-            return chiMax;
-        }
-
         map<pair<double, double>, vector<map<string, double>>> heavy_hitters(vector<pair<double, double>> params) {
             map<pair<double, double>, vector<map<string, double>>> res;
 
@@ -102,10 +85,10 @@ namespace TDHH {
             for (const auto &param : params) {
                 double eps = param.first;
                 double delta = param.second;
-                unsigned int chi = ceil(9.0 / (eps * eps) * log2(2.0 / (delta * eps)));
+                auto chi = static_cast<unsigned int>(ceil(9.0 / (eps * eps) * log2(2.0 / (delta * eps))));
                 vector<Heap *> heap_arr;
                 for (int I = 0; I < ITERATIONS; I++) {
-                    Heap *heap = new Heap(chi);
+                    auto *heap = new Heap(chi);
                     heap_arr.push_back(heap);
                 }
                 param_to_heap_arr.insert(pair<pair<double, double>, vector<Heap *>>(param, heap_arr));
@@ -162,11 +145,11 @@ namespace TDHH {
             for (const auto &param : params) {
                 double eps = param.first;
                 double delta = param.second;
-                int counters = pow((3 / eps), 2);
-                int bits = log2(counters);
+                auto counters = static_cast<int>(pow((3 / eps), 2));
+                auto bits = static_cast<int>(log2(counters));
                 vector<HyperLogLog> hll_arr;
                 for (int I = 0; I < ITERATIONS; I++) {
-                    HyperLogLog hll(bits);
+                    HyperLogLog hll(static_cast<uint8_t>(bits));
                     hll.set_seed(rd());
                     hll_arr.push_back(hll);
                 }
@@ -177,11 +160,11 @@ namespace TDHH {
             for (const auto &param : params) {
                 double eps = param.first;
                 double delta = param.second;
-                unsigned int chi = ceil(3.0 / (eps / 2 * eps / 2) * log2(2.0 / delta / 2));
+                auto chi = static_cast<unsigned int>(ceil(3.0 / (eps / 2 * eps / 2) * log2(2.0 / delta / 2)));
                 vector<Heap *> heap_arr;
                 for (int I = 0; I < ITERATIONS; I++) {
-                    Heap *chiMax = new Heap(chi);
-                    heap_arr.push_back(chiMax);
+                    auto *heap = new Heap(chi);
+                    heap_arr.push_back(heap);
                 }
                 param_to_heap_arr.insert(pair<pair<double, double>, vector<Heap *>>(param, heap_arr));
             }
@@ -200,7 +183,7 @@ namespace TDHH {
                 const auto &pkt_string = pkt->getReprString();
                 for (const auto &param : params) {
                     for (auto &hll : param_to_hll_arr.at(param)) {
-                        hll.add(pkt_string.c_str(), pkt_string.size());
+                        hll.add(pkt_string.c_str(), static_cast<int>(pkt_string.size()));
                     }
                     for (auto &heap : param_to_heap_arr.at(param)) {
                         heap->Add(pkt->getReprString());

@@ -76,9 +76,9 @@ public:
         delete engine;
     }
 
-    virtual unsigned long size() const;
+    virtual unsigned long Size() const;
 
-    virtual bool Add(string item);
+    virtual bool Add(const string &item);
 
     virtual HeapItem GetMinimalItem() const;
 
