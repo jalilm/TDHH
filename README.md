@@ -26,20 +26,26 @@ After obtaining the traces, navigate into ./utils using "cd ./utils" and perform
 
 * For CAIDA traces:
 1) For each pcap file of intrest in the CAIDA trace run the follwoing:
+  
   ./extract_script.sh ../datasets_files/CAIDA/equinix-chicago.dirA.20160121-130000.UTC.anon.pcap ../datasets_files/CAIDA/caida.csv
-2) Calculate flow counts using from the generated "caida.csv":
+2) Calculate flow counts using:
+  
   ./calculate_caida_flow_count.sh
 
 * For UCLA traces:
 1) For each x.pcap file, run the following:
+  
   ./extract_script.sh ../datasets_diles/UCLA_FULL/x.pcap ../datasets_files/UCLA_FULL/ucla_full.csv
 2) Calculate flow counts using:
+  
   ./calculate_ucla_flow_count.sh
 
 * For UNIV1 traces:
 1) For each x.pcap file, run the following:
+  
   ./extract_script.sh ../datasets_diles/UNIV1/x.pcap ../datasets_files/UNIV1/univ1.csv
 2) Calculate flow counts using:
+  
   ./calculate_univ_flow_count.sh
 
 # How to run the program
