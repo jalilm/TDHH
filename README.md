@@ -32,7 +32,6 @@ The first paramter sets the application to run:
 
 The second parameter sets which trace to use:
 * CAIDA: for CAIDA'16 traces.
-* CAIDA18: for CAIDA'18 traces.
-* UCLA_FULL: for all of the UCLA traces.
-* UNIV1: for the UNIV1 trace.
-* UNIV2: for the UNIV2 trace.
+* UCLA_FULL: for the UCLA traces.
+* UNIV1: for the UNIV trace.
+
