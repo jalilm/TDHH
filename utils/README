@@ -1,4 +1,5 @@
 This directory contains files used to extract csv files from pcap files of the different traces.
+
 For CAIDA traces:
 1) Run caida_script.sh on pcap file.
 2) calculate_caida_flow_count.sh on generated caida.csv file from step (1).
@@ -8,6 +9,3 @@ For UCLA traces:
 
 For UNIV1 traces:
 1) Run calculate_univ_flow_count.sh on univ1.csv file.
-
-For UNIV2 traces:
-1) Run calculate_univ_flow_count.sh on univ2.csv file.
