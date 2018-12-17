@@ -21,6 +21,27 @@ These commands produce the exectuable TDHH in the root directory.
 # Obtaining the traces
 Before being able to reproduce the results, you will have to obtain the datasets traces from several locations and pre-process them.
 
+# Pre processing the traces:
+After obtaining the traces, navigate into ./utils using "cd ./utils" and perform the following:
+
+* For CAIDA traces:
+1) For each pcap file of intrest in the CAIDA trace run the follwoing:
+  ./extract_script.sh ../datasets_files/CAIDA/equinix-chicago.dirA.20160121-130000.UTC.anon.pcap ../datasets_files/CAIDA/caida.csv
+2) Calculate flow counts using from the generated "caida.csv":
+  ./calculate_caida_flow_count.sh
+
+* For UCLA traces:
+1) For each x.pcap file, run the following:
+  ./extract_script.sh ../datasets_diles/UCLA_FULL/x.pcap ../datasets_files/UCLA_FULL/ucla_full.csv
+2) Calculate flow counts using:
+  ./calculate_ucla_flow_count.sh
+
+* For UNIV1 traces:
+1) For each x.pcap file, run the following:
+  ./extract_script.sh ../datasets_diles/UNIV1/x.pcap ../datasets_files/UNIV1/univ1.csv
+2) Calculate flow counts using:
+  ./calculate_univ_flow_count.sh
+
 # How to run the program
 Simply run any variation fo the following command:
 ./TDHH {VE, FE, HH} {CAIDA, CAIDA18, UCLA, UCLA_FULL, UNIV1, UNIV2}
@@ -34,4 +55,3 @@ The second parameter sets which trace to use:
 * CAIDA: for CAIDA'16 traces.
 * UCLA_FULL: for the UCLA traces.
 * UNIV1: for the UNIV trace.
-
