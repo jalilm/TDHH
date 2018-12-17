@@ -65,3 +65,8 @@ The second parameter sets which trace to use:
 * CAIDA: for CAIDA'16 traces.
 * UCLA_FULL: for the UCLA traces.
 * UNIV1: for the UNIV trace.
+
+# Obtaing the results
+Each run writes to a specified output file under "./results", the file name is the following:
+
+./{ve,fe,hh}\_{caida,ucla,univ1}.raw\_res
