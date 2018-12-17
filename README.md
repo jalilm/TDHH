@@ -21,14 +21,41 @@ These commands produce the exectuable TDHH in the root directory.
 # Obtaining the traces
 Before being able to reproduce the results, you will have to obtain the datasets traces from several locations and pre-process them.
 
-You will have to request access to CAIDA aannonymized passive traces 2016 from CAIDA website:
+* You will have to request access to CAIDA aannonymized passive traces 2016 from CAIDA website:
 
 https://www.caida.org/data/passive/passive_dataset_request.xml
 
-and the download the Jan, 21^{st} traces using:
+and the download the Jan, 21st traces using and your credintails:
 
 https://data.caida.org/datasets/passive-2016
 
+* Download the UCLA traces (1 to 10) using the following links:
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace1/
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace2/
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace3/
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace4/
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace5/
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace6/
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace7/
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace8/
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace9/
+
+https://lasr.cs.ucla.edu/ddos/traces/public/trace10/
+
+* Download the UNIV1 traces using:
+
+http://pages.cs.wisc.edu/~tbenson/IMC10_Data.html 
+
+You will have to uncompress the compressed file and put them in the appropriate directory under ./datasets_files before pre processing them in the next step.
 
 # Pre processing the traces:
 After obtaining the traces, navigate into ./utils using "cd ./utils" and perform the following:
