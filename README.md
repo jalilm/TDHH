@@ -28,6 +28,7 @@ After obtaining the traces, navigate into ./utils using "cd ./utils" and perform
 1) For each pcap file of intrest in the CAIDA trace run the follwoing:
   
   ./extract_script.sh ../datasets_files/CAIDA/equinix-chicago.dirA.20160121-130000.UTC.anon.pcap ../datasets_files/CAIDA/caida.csv
+  
 2) Calculate flow counts using:
   
   ./calculate_caida_flow_count.sh
@@ -36,6 +37,7 @@ After obtaining the traces, navigate into ./utils using "cd ./utils" and perform
 1) For each x.pcap file, run the following:
   
   ./extract_script.sh ../datasets_diles/UCLA_FULL/x.pcap ../datasets_files/UCLA_FULL/ucla_full.csv
+  
 2) Calculate flow counts using:
   
   ./calculate_ucla_flow_count.sh
@@ -44,12 +46,14 @@ After obtaining the traces, navigate into ./utils using "cd ./utils" and perform
 1) For each x.pcap file, run the following:
   
   ./extract_script.sh ../datasets_diles/UNIV1/x.pcap ../datasets_files/UNIV1/univ1.csv
+  
 2) Calculate flow counts using:
   
   ./calculate_univ_flow_count.sh
 
 # How to run the program
 Simply run any variation fo the following command:
+
 ./TDHH {VE, FE, HH} {CAIDA, CAIDA18, UCLA, UCLA_FULL, UNIV1, UNIV2}
 
 The first paramter sets the application to run:
