@@ -21,6 +21,15 @@ These commands produce the exectuable TDHH in the root directory.
 # Obtaining the traces
 Before being able to reproduce the results, you will have to obtain the datasets traces from several locations and pre-process them.
 
+You will have to request access to CAIDA aannonymized passive traces 2016 from CAIDA website:
+
+https://www.caida.org/data/passive/passive_dataset_request.xml
+
+and the download the Jan, 21^{st} traces using:
+
+https://data.caida.org/datasets/passive-2016
+
+
 # Pre processing the traces:
 After obtaining the traces, navigate into ./utils using "cd ./utils" and perform the following:
 
